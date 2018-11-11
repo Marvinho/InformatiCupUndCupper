@@ -24,18 +24,16 @@ import time
 
 
 model = ModelCNN.Net()
-#model = models.resnet18(pretrained=True)
 
-epsilons = [0, .05, .1, .15, .2, .25, .3]
 pretrained_model = "saved_model_state_CNN_final.pth"
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cpu" if torch.cuda.is_available() else "cpu")
 print(device)
 
-#image_name = "12629.ppm"
 image_size = (64,64)
 mean = [0.485, 0.456, 0.406]
 std = [0.229, 0.224, 0.225]
+
 preprocess = transforms.Compose([transforms.Resize(size = image_size), 
                             transforms.ToTensor(), 
                             transforms.Normalize(mean, std)])
@@ -67,23 +65,36 @@ def loadModel(model = model):
     print("loaded the model.")
 
 
-def createImage(random = True, color = 0):
+def createImage(random, color = None):
     
     w, h = 64, 64      # w * h
     print("creating image...")
     if(random == True):        
-        test_image = np.random.randint(256, size=(w, h, 3), dtype=np.uint8)
+        test_image = np.random.randint(256, size = (w, h, 3), dtype = np.uint8)
         test_image = Image.fromarray(test_image, 'RGB')
     else:
-        test_image = Image.new("RGB", size = (w, h), color= color)
+        if(color == None):
+            color = 0    
+        test_image = Image.new("RGB", size = (w, h), color = color)
     
     plt.imshow(test_image)
     plt.show()    
     print("saving image...")
     date_string = time.strftime("%Y-%m-%d-%H_%M")
-    test_image.save("./Images/adversarials/test_image{}.png".format(date_string))
+    test_image.save("./Images/original/orig_image_{}.png".format(date_string))
     #img.show()
 
+
+def showPlot(probs):
+    fig = plt.figure(figsize = (15,9))
+    fig.suptitle('Probabilities')
+    x_axe = []
+    for i in range(43):
+        x_axe.append(i)
+
+    plt.bar(x_axe, probs.detach().squeeze().numpy(), width = 0.5, tick_label = x_axe)
+    
+#    print(output_probs)
     
 
 def predictImage(data):
@@ -94,8 +105,8 @@ def predictImage(data):
     
     output = model.forward(image)
     x_pred = torch.max(output.data, 1)[1][0]   #get an index(class number) of a largest element   
-    
     output_probs = F.softmax(output, dim=1)
+    showPlot(output_probs)
     x_pred_prob =  torch.max(output_probs.data, 1)[0][0]
     
     print("groundtruth: {} prediction: {} confidence of: {:.2f}%"
@@ -289,7 +300,7 @@ def visualize(x, x_adv, x_grad, epsilon, clean_pred, adv_pred, clean_prob, adv_p
 #    plt.show()
 #    print("saving image...")
 #    date_string = time.strftime("%Y-%m-%d-%H_%M")
-#    im.save("./Images/adversarials/test_image{}.png".format(date_string))
+#    im.save("./Images/adversarials/adversarial_image_{}.png".format(date_string))
     
     x_grad = x_grad.squeeze(0).detach().to("cpu").numpy()
     x_grad = np.transpose(x_grad, (1,2,0))
@@ -339,15 +350,16 @@ def visualize(x, x_adv, x_grad, epsilon, clean_pred, adv_pred, clean_prob, adv_p
 #
 #imshow(out, title=[x for x in classes])  
 if __name__ == "__main__":
-
-#    createImage(random = False, color = "green")
+#    predictImage()
+#    createImage(random = False, color = "blue")
     
     loadModel()
     model = model.to(device)
     
     
     for data in testloader:
-        image, output, x_pred, x_pred_prob = predictImage(data)
-        createIterativeAdversarial(image, output, x_pred, x_pred_prob)
+        predictImage(data)
+#        image, output, x_pred, x_pred_prob = predictImage(data)
+#        createIterativeAdversarial(image, output, x_pred, x_pred_prob)
         
     print("finished.")
