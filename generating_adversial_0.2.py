@@ -4,6 +4,7 @@ Created on Sun Nov  4 11:20:37 2018
 
 @author: MRVN
 """
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -17,6 +18,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import ModelCNN
 import time
+import os
+import requests
 
 
 
@@ -85,7 +88,7 @@ def createImage(random, color = None):
     #img.show()
 
 
-def showPlot(probs):
+def showConfidencePlot(probs):
     fig = plt.figure(figsize = (15,9))
     fig.suptitle('Probabilities')
     x_axe = []
@@ -106,7 +109,7 @@ def predictImage(data):
     output = model.forward(image)
     x_pred = torch.max(output.data, 1)[1][0]   #get an index(class number) of a largest element   
     output_probs = F.softmax(output, dim=1)
-    showPlot(output_probs)
+#    showConfidencePlot(output_probs)
     x_pred_prob =  torch.max(output_probs.data, 1)[0][0]
     
     print("groundtruth: {} prediction: {} confidence of: {:.2f}%"
@@ -157,19 +160,19 @@ def createIterativeAdversarial(image, output, x_pred, x_pred_prob):
 #    loss_cal2 = loss(output, test_label)
 #    print(image.grad.data)
     image_temp = image.clone()
-    y_target = 25
+    y_target = 35
     y_target = torch.tensor([y_target], requires_grad=False)
     print("targetlabel for the attack: {}".format(y_target.item()))
     y_target = y_target.to(device)
              
-    epsilons = [0.75]
+    epsilons = [0.5]
 #    epsilons = [0.5]
-    num_steps = 20
-    alpha = 0.05
+    num_iteration = 11
+    alpha = 0.025
     
    # x_adversarial.data = image
     for epsilon in epsilons:
-        for i in range(num_steps):
+        for iteration in range(num_iteration):
             zero_gradients(image)
             loss = torch.nn.CrossEntropyLoss()                     
             loss_cal2 = loss(output, y_target)
@@ -180,13 +183,14 @@ def createIterativeAdversarial(image, output, x_pred, x_pred_prob):
             total_grad = torch.clamp(total_grad, -epsilon, epsilon)
             x_adversarial = image + total_grad
             image.data = x_adversarial
-    
-        output_adv = model.forward(Variable(image))
-        x_adv_pred = torch.max(output_adv.data, 1)[1][0]
-        op_adv_probs = F.softmax(output_adv, dim=1)
-        x_adv_pred_prob =  torch.max(op_adv_probs.data, 1)[0][0]
-        visualize(image_temp, image.data, total_grad, epsilon, x_pred, x_adv_pred, 
-                  x_pred_prob, x_adv_pred_prob) 
+            
+            if(iteration % 5 == 0):
+                output_adv = model.forward(Variable(image))
+                x_adv_pred = torch.max(output_adv.data, 1)[1][0]
+                op_adv_probs = F.softmax(output_adv, dim=1)
+                x_adv_pred_prob =  torch.max(op_adv_probs.data, 1)[0][0]
+                visualize(image_temp, image.data, total_grad, epsilon, x_pred, x_adv_pred, 
+                          x_pred_prob, x_adv_pred_prob, iteration, alpha) 
         
     
 # FGSM attack code
@@ -199,66 +203,6 @@ def fgsm_attack(image, epsilon, data_grad):
     perturbed_image = torch.clamp(perturbed_image, 0, 1)
     # Return the perturbed image
     return perturbed_image
-
-
-
-
-# =============================================================================
-# def testImages(epsilon, model = model, device = device, 
-#                testloader = testloader):
-#     
-#     print("starting testing...")
-#     running_corrects = 0
-#     
-#     for data in testloader:
-#         inputs, labels = data
-#         inputs, labels = inputs.to(device), labels.to(device)
-#         
-#         out = utils.make_grid(inputs)
-# 
-#         imshow(out, title=[x for x in classes])
-#         
-#         
-#         inputs.requires_grad = True
-#         output = model.forward(inputs)
-#         pred_label = torch.max(output, 1)[1]
-#         print(pred_label)
-#         print(labels)
-#         if pred_label.item() != labels.item():
-#             continue
-#         
-#         loss = torch.nn.CrossEntropyLoss()
-#         loss_cal = loss(output, labels)
-# 
-#         model.zero_grad()
-#         
-#         loss_cal.backward(retain_graph=True)
-#         
-#         data_grad = inputs.grad.data
-# 
-#         
-#         peturbed_inputs = fgsm_attack(inputs, epsilon, data_grad)
-#         
-#         out = utils.make_grid(peturbed_inputs)
-# 
-#         imshow(out, title=[x for x in classes])
-#         
-#         
-#         output = model.forward(peturbed_inputs)
-#         
-#         final_pred = output.max(1, keepdim = True)[1]
-#         print(final_pred)
-#         
-#         if(final_pred.item() == labels.item()):
-#             running_corrects += 1    
-#     final_acc = running_corrects / float(len(testloader))
-#     print("Epsilon: {}\tTest Accuracy = {} / {} = {}".format(epsilon, running_corrects, len(testloader), final_acc))
-#         
-#     return final_acc
-# =============================================================================
-
-
-
 
 
 
@@ -278,7 +222,8 @@ def imshow(inp, title=None):
 
 
 
-def visualize(x, x_adv, x_grad, epsilon, clean_pred, adv_pred, clean_prob, adv_prob):
+def visualize(x, x_adv, x_grad, epsilon, clean_pred, adv_pred, 
+              clean_prob, adv_prob, iteration, alpha):
     
     x = x.squeeze(0)     #remove batch dimension # B X C H X W ==> C X H X W
     x = x.mul(torch.FloatTensor(std).to(device).view(3,1,1))
@@ -293,14 +238,14 @@ def visualize(x, x_adv, x_grad, epsilon, clean_pred, adv_pred, clean_prob, adv_p
     x_adv = x_adv.add(torch.FloatTensor(mean).to(device).view(3,1,1)).to("cpu").numpy()#reverse of normalization op
     x_adv = np.transpose( x_adv , (1,2,0))   # C X H X W  ==>   H X W X C
     x_adv = np.clip(x_adv, 0, 1)
-#    print(x_adv.shape)
-#    im = Image.fromarray(np.uint8(x_adv*255), "RGB")
+    print(x_adv.shape)
+    im = Image.fromarray(np.uint8(x_adv*255), "RGB")
 #    saving_image = Image.fromarray(x, 'RGB')
-#    plt.imshow(im)
-#    plt.show()
-#    print("saving image...")
-#    date_string = time.strftime("%Y-%m-%d-%H_%M")
-#    im.save("./Images/adversarials/adversarial_image_{}.png".format(date_string))
+    plt.imshow(im)
+    plt.show()
+    print("saving image...")
+    date_string = time.strftime("%Y-%m-%d-%H_%M")
+    im.save("./Images/adversarials/adv_img_{}_eps{}_iter{}_alpha{}.png".format(date_string, epsilon, iteration, alpha))
     
     x_grad = x_grad.squeeze(0).detach().to("cpu").numpy()
     x_grad = np.transpose(x_grad, (1,2,0))
@@ -342,13 +287,20 @@ def visualize(x, x_adv, x_grad, epsilon, clean_pred, adv_pred, clean_prob, adv_p
     plt.show()
 
 
+def testImagesOnNetwork():
+    # tests all images that are in the "adversarials" folder
+    url = "https://phinau.de/trasi"
+    key = {"key" : "raekieh3ZofooPhaequoh9oonge8eiya"}
+    files = {"image": open("test_image2018-11-06-14_25.png", "rb")}
+    dirs = os.listdir("./adversarials" )
     
-#inputs, classes = next(iter(testloader))
-#
-## Make a grid from batch
-#out = utils.make_grid(inputs)
-#
-#imshow(out, title=[x for x in classes])  
+    for file in dirs:
+        files = {"image": open("./adversarials/{}".format(file), "rb")}
+        r = requests.post(url, data = key, files = files)
+        print(r)
+        print(r.json())
+
+
 if __name__ == "__main__":
 #    predictImage()
 #    createImage(random = False, color = "blue")
@@ -359,7 +311,8 @@ if __name__ == "__main__":
     
     for data in testloader:
         predictImage(data)
-#        image, output, x_pred, x_pred_prob = predictImage(data)
-#        createIterativeAdversarial(image, output, x_pred, x_pred_prob)
+        createImage(random = True)
+        image, output, x_pred, x_pred_prob = predictImage(data)
+        createIterativeAdversarial(image, output, x_pred, x_pred_prob)
         
     print("finished.")
