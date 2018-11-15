@@ -15,6 +15,7 @@ from torchvision.datasets import ImageFolder
 from PIL import Image
 from torch.autograd import Variable
 from torchviz import make_dot, make_dot_from_trace
+import InformatiCupLoss
 import matplotlib.pyplot as plt
 import numpy as np
 import time
@@ -55,46 +56,6 @@ class Net(nn.Module):
         for s in size:
             num_features *= s
         return num_features
-
-    def loss(self, x):
-        url = "https://phinau.de/trasi"
-        key = {"key" : "raekieh3ZofooPhaequoh9oonge8eiya"}
-        dirs = os.listdir("./AdvTraining/Results" )
-        confidences = []
-        i = 0
-        criterion = nn.L1Loss()
-        target = torch.FloatTensor([[1],[1],[1],[1],[1]])
-        target = target.squeeze()
-        target = Variable(target)
-        #print(x[0])
-
-
-        while i < 5: 
-            y = x[i]     #remove batch dimension # B X C H X W ==> C X H X W
-            y = y.mul(torch.FloatTensor(std).to(device).view(3,1,1))
-            y = y.add(torch.FloatTensor(mean).to(device).view(3,1,1))
-            y = y.detach().to("cpu").numpy()#reverse of normalization op- "unnormalize"
-            y = np.transpose( y , (1,2,0))   # C X H X W  ==>   H X W X C
-            #y = np.clip(y, 0, 1)
-            y = Image.fromarray(np.uint8(y*255), "RGB")
-            y.save("./AdvTraining/Results/adv_img_{}.png".format(i))
-            i = i + 1
-    
-        for file in dirs:
-            files = {"image": open("./AdvTraining/Results//{}".format(file), "rb")}
-            r = requests.post(url, data = key, files = files)
-            #print(r.json())
-            answer = r.json()
-            confidences.append(answer[0]['confidence'])
-            #print(r.json())
-        results = torch.FloatTensor()
-        results = Variable(results, requires_grad=True)
-        results = torch.FloatTensor(confidences).requires_grad_()
-        print(x.shape)
-        x = x.view(5,3*64*64)
-        x = x * 0 + results
-        time.sleep(5)
-        return criterion(x, target)
 
 
 
@@ -162,7 +123,7 @@ out = utils.make_grid(inputs)
 
 model = Net()
 model = model.to(device)
-
+criterion = InformatiCupLoss()
 
 optimizer = optim.SGD(model.parameters(), lr=0.1, momentum=0.9)
 num_epochs = 61
@@ -196,7 +157,7 @@ def training(model = model, optimizer = optimizer, num_epochs = num_epochs):
             outputs = model(inputs)
             _, predicted = torch.max(outputs, 1)
             
-            loss = model.loss(outputs)
+            loss = criterion(outputs)
             loss.backward()
             optimizer.step()
 
