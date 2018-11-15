@@ -13,23 +13,28 @@ from torch.utils.data import DataLoader, random_split
 from torchvision import transforms, utils
 from torchvision.datasets import ImageFolder
 from PIL import Image
+from torch.autograd import Variable
+from torchviz import make_dot, make_dot_from_trace
 import matplotlib.pyplot as plt
 import numpy as np
 import time
+import os
+import requests
+
 
 
 class Net(nn.Module):
     
     def __init__(self):
         super(Net, self).__init__()
-        self.fc1 = nn.linear(64*64, 256)
-        self.fc2 = nn.linear(256, 512)
-        self.fc3 = nn.linear(512, 1024)
-        self.fc4 = nn.linear(1024, 64*64)
+        self.fc1 = nn.Linear(64*64, 256)
+        self.fc2 = nn.Linear(256, 512)
+        self.fc3 = nn.Linear(512, 1024)
+        self.fc4 = nn.Linear(1024, 64*64)
     
     
     def forward(self, x):
-        x = x.view(5,64*64)
+        x = x.view(5,3,64*64)
         x = self.fc1(x)
         x = F.leaky_relu(x)
         x = self.fc2(x)
@@ -40,7 +45,7 @@ class Net(nn.Module):
         x = self.fc4(x)
 #        print(x.shape)
         x = F.tanh(x)
-        x = x.view(5, 64, 64)
+        x = x.view(5,3, 64, 64)
         return x
 
 
@@ -57,15 +62,20 @@ class Net(nn.Module):
         dirs = os.listdir("./AdvTraining/Results" )
         confidences = []
         i = 0
+        criterion = nn.L1Loss()
+        target = torch.FloatTensor([[1],[1],[1],[1],[1]])
+        target = target.squeeze()
+        target = Variable(target)
+        #print(x[0])
 
 
-        while i < 6: 
+        while i < 5: 
             y = x[i]     #remove batch dimension # B X C H X W ==> C X H X W
             y = y.mul(torch.FloatTensor(std).to(device).view(3,1,1))
             y = y.add(torch.FloatTensor(mean).to(device).view(3,1,1))
             y = y.detach().to("cpu").numpy()#reverse of normalization op- "unnormalize"
             y = np.transpose( y , (1,2,0))   # C X H X W  ==>   H X W X C
-            y = np.clip(y, 0, 1)
+            #y = np.clip(y, 0, 1)
             y = Image.fromarray(np.uint8(y*255), "RGB")
             y.save("./AdvTraining/Results/adv_img_{}.png".format(i))
             i = i + 1
@@ -73,10 +83,18 @@ class Net(nn.Module):
         for file in dirs:
             files = {"image": open("./AdvTraining/Results//{}".format(file), "rb")}
             r = requests.post(url, data = key, files = files)
-            print(r)
-            print(r.json())
-
-    return 1 - np.mean(confidences)
+            #print(r.json())
+            answer = r.json()
+            confidences.append(answer[0]['confidence'])
+            #print(r.json())
+        results = torch.FloatTensor()
+        results = Variable(results, requires_grad=True)
+        results = torch.FloatTensor(confidences).requires_grad_()
+        print(x.shape)
+        x = x.view(5,3*64*64)
+        x = x * 0 + results
+        time.sleep(5)
+        return criterion(x, target)
 
 
 
@@ -91,7 +109,7 @@ image_size = (64,64)
 mean = [0.485, 0.456, 0.406]
 std = [0.229, 0.224, 0.225]
 
-traindatapath = "./AdvTraining/Images"
+traindatapath = "./AdvTraining/"
 testdatapath = "./AdvTraining/Images"
 
 data_transforms = {
@@ -134,7 +152,7 @@ def imshow(inp, title=None):
 
 
 # Get a batch of training data
-inputs = next(iter(trainloader))
+inputs, classes = next(iter(trainloader))
 
 # Make a grid from batch
 out = utils.make_grid(inputs)
@@ -146,12 +164,12 @@ model = Net()
 model = model.to(device)
 
 
-optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+optimizer = optim.SGD(model.parameters(), lr=0.1, momentum=0.9)
 num_epochs = 61
 
 
 
-def training(model = model, criterion = criterion, optimizer = optimizer, num_epochs = num_epochs):
+def training(model = model, optimizer = optimizer, num_epochs = num_epochs):
     
     print("start training...")
     since = time.time()
@@ -166,8 +184,9 @@ def training(model = model, criterion = criterion, optimizer = optimizer, num_ep
         
         for i, data in enumerate(trainloader, 0):
             # get the inputs
-            inputs = data
-            inputs = inputs.to(device)
+            inputs, labels = data
+            inputs, labels = inputs.to(device), labels.to(device)
+            inputs = Variable(inputs, requires_grad= True)
             #print("put inputs and labels on gpu...")
       
             # zero the parameter gradients
@@ -183,19 +202,16 @@ def training(model = model, criterion = criterion, optimizer = optimizer, num_ep
 
             # print statistics
             running_loss += loss.item() * inputs.size(0)
-            running_corrects += torch.sum(predicted.data == labels.data)
+            #running_corrects += torch.sum(predicted.data == labels.data)
 
         epoch_loss = running_loss / train_size
-        epoch_accuracy = (running_corrects.item() / train_size) * 100
-        print("Loss: {:.4f} Accuracy: {:.4f}%".format(epoch_loss, epoch_accuracy))
+        #epoch_accuracy = (running_corrects.item() / train_size) * 100
+        print("Loss: {:.4f}".format(epoch_loss))
         
         time_elapsed = time.time() - timestart_epoch
         print("finished epoch in {:.0f}m {:.0f}s.".format(time_elapsed // 60, time_elapsed % 60))
         
-        if(epoch%4 == 0 and epoch > 0):
-            print()
-            testing(epoch)
-            print()
+        
     
     time_elapsed = time.time() - since
     print("finished training in {:.0f}m {:.0f}s.".format(time_elapsed // 60, time_elapsed % 60))
@@ -205,7 +221,7 @@ def training(model = model, criterion = criterion, optimizer = optimizer, num_ep
 
 
 
-def testing(epoch, model = model, criterion = criterion):
+def testing(epoch, model = model):
     print("start testing...")
     model.eval()
     with torch.no_grad():
