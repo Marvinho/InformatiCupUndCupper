@@ -291,7 +291,6 @@ def testImagesOnNetwork():
     # tests all images that are in the "adversarials" folder
     url = "https://phinau.de/trasi"
     key = {"key" : "raekieh3ZofooPhaequoh9oonge8eiya"}
-    files = {"image": open("test_image2018-11-06-14_25.png", "rb")}
     dirs = os.listdir("./adversarials" )
     
     for file in dirs:
