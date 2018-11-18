@@ -16,7 +16,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import time
 import os
-import requests
+import shutil
 import modelcnn
 
 
@@ -38,7 +38,7 @@ preprocess = transforms.Compose([transforms.Resize(size = image_size),
                             transforms.Normalize(mean, std)])
 
     
-testdatapath = "./Images"
+testdatapath = "./Images/"
 test_data = ImageFolder(root = testdatapath, transform = preprocess)
 testloader = DataLoader(dataset = test_data)
 
@@ -199,17 +199,15 @@ def visualize(x, x_adv, x_grad, epsilon, iteration, alpha, clean_pred, adv_pred,
     plt.show()
     
     
-def testImagesOnNetwork():
-    # tests all images that are in the "adversarials" folder
-    url = "https://phinau.de/trasi"
-    key = {"key" : "raekieh3ZofooPhaequoh9oonge8eiya"}
-    dirs = os.listdir("./adversarials" )
+def moveUsedImages():
+    source = "./Images/originals/"
+    destination = "./usedImages/"
     
-    for file in dirs:
-        files = {"image": open("./adversarials/{}".format(file), "rb")}
-        r = requests.post(url, data = key, files = files)
-        print(r)
-        print(r.json())
+    
+    files = os.listdir(source)
+    
+    for file in files:
+            shutil.move(os.path.join(source, file), destination)
 
  
 if __name__ == "__main__":
@@ -220,5 +218,5 @@ if __name__ == "__main__":
         for data in testloader:            
             image, output, x_pred, x_pred_prob = predictImage(data)
             createIterativeAdversarial(image, i, output, x_pred, x_pred_prob)
-        
+    moveUsedImages()
     print("finished.")

@@ -26,6 +26,7 @@ def testImagesOnNetwork():
         top_class = confidences[0]["class"]
         all_top_confidences.append([file, top_class, top_confidence])
 #        time.sleep(1)
+
     print(all_top_confidences)
     print()
     print(sorted(all_top_confidences, key=lambda confidence: confidence[2], reverse = True)[:5])
