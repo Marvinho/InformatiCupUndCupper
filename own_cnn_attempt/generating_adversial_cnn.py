@@ -18,6 +18,7 @@ import time
 import os
 import shutil
 import modelcnn
+import generateimage
 
 
 
@@ -39,6 +40,13 @@ preprocess = transforms.Compose([transforms.Resize(size = image_size),
 
     
 testdatapath = "./Images/"
+try:
+    test_data = ImageFolder(root = testdatapath, transform = preprocess)
+except:
+    print("YOU NEED IMAGES IN ./IMAGES/ORIGINALS")
+    print("CREATING RANDOM IMAGE...")
+    generateimage.createImage(random = True)
+
 test_data = ImageFolder(root = testdatapath, transform = preprocess)
 testloader = DataLoader(dataset = test_data)
 
@@ -75,8 +83,8 @@ def predictImage(data):
 #    showPlot(output_probs)
     x_pred_prob =  torch.max(output_probs.data, 1)[0][0]
     
-    print("prediction: {} confidence of: {:.2f}%"
-          .format(x_pred.item(), x_pred_prob.item()*100))
+#    print("prediction: {} confidence of: {:.2f}%"
+#          .format(x_pred.item(), x_pred_prob.item()*100))
     
     return image, output, x_pred, x_pred_prob
 
@@ -89,7 +97,7 @@ def createIterativeAdversarial(image, y_target_label, output, x_pred, x_pred_pro
     y_target = y_target.to(device)
              
     epsilons = [0.25]
-    num_steps = 101
+    num_steps = 71
     alphas = [0.025]
     
     for alpha in alphas:
@@ -109,7 +117,7 @@ def createIterativeAdversarial(image, y_target_label, output, x_pred, x_pred_pro
                 x_adversarial = image + total_grad
                 image.data = x_adversarial
                 
-                if(num_step % 5 == 0 and num_step == 80):
+                if(num_step == 70):
                     output_adv = model.forward(Variable(image))
                     x_adv_pred = torch.max(output_adv.data, 1)[1][0]
                     op_adv_probs = F.softmax(output_adv, dim=1)
@@ -156,16 +164,16 @@ def visualize(x, x_adv, x_grad, epsilon, iteration, alpha, clean_pred, adv_pred,
 #    plt.show()
     date_string = time.strftime("%Y-%m-%d-%H_%M")
     image_path = "./adversarials/adverimg_{}_eps{}_iter{}_alpha{}_label{}.png".format(date_string, epsilon, iteration, alpha, y_target_label)
-    print("saving image as {}...".format(image_path))
+    print("saving image at {}...".format(image_path))
     im.save(image_path)
     
     x_grad = x_grad.squeeze(0).detach().to("cpu").numpy()
     x_grad = np.transpose(x_grad, (1,2,0))
     x_grad = np.clip(x_grad, 0, 1)
     
-    figure, ax = plt.subplots(1,2, figsize=(9,4))
+    figure, ax = plt.subplots(1,2, figsize=(5,5))
     ax[0].imshow(x)
-    ax[0].set_title('Clean Example', fontsize=15)
+    ax[0].set_title('Clean Example', fontsize=8)
     
     
 #    ax[1].imshow(x_grad)
@@ -177,7 +185,7 @@ def visualize(x, x_adv, x_grad, epsilon, iteration, alpha, clean_pred, adv_pred,
 
     
     ax[1].imshow(x_adv)
-    ax[1].set_title('Adversarial Example', fontsize=15)
+    ax[1].set_title('Adversarial Example', fontsize=8)
     
     ax[0].axis('off')
     ax[1].axis('off')
@@ -186,13 +194,13 @@ def visualize(x, x_adv, x_grad, epsilon, iteration, alpha, clean_pred, adv_pred,
 #             transform=ax[0].transAxes)
     
     ax[0].text(0.5,-0.13, "Prediction: {}\n Probability: {:.4f}".format(clean_pred, clean_prob), 
-              size=10, ha="center", 
+              size=8, ha="center", 
               transform=ax[0].transAxes)
     
 #    ax[1].text(1.1,0.5, " = ", size=15, ha="center", transform=ax[1].transAxes)
 
     ax[1].text(0.5,-0.13, "Prediction: {}\n Probability: {:.4f}".format(adv_pred, adv_prob), 
-              size=10, ha="center", 
+              size=8, ha="center", 
               transform=ax[1].transAxes)
     
 

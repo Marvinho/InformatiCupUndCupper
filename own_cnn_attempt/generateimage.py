@@ -26,9 +26,9 @@ def createImage(random, color = None):
     plt.imshow(test_image)
     plt.show()    
     print("saving image...")
-    date_string = time.strftime("%Y-%m-%d-%H_%M")
-    test_image.save("./Images/originals/orig_image_{}_color_{}.png".format(date_string, color))
+    date_string = time.strftime("%Y-%m-%d-%H_%M_%S")
+    test_image.save("./Images/originals/org_img_{}.png".format(date_string))
 
 
 if __name__ == "__main__":
-    createImage(random = False, color = "pink")
+    createImage(random = False, color = "magenta")
