@@ -27,7 +27,7 @@ def createImage(random, color = None):
     plt.show()    
     print("saving image...")
     date_string = time.strftime("%Y-%m-%d-%H_%M")
-    test_image.save("../Images/originals/orig_image_{}_color_{}.png".format(date_string, color))
+    test_image.save("./Images/originals/orig_image_{}_color_{}.png".format(date_string, color))
 
 
 if __name__ == "__main__":
