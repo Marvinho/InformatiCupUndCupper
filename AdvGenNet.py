@@ -35,7 +35,7 @@ class Net(nn.Module):
     
     
     def forward(self, x):
-        x = x.view(5,3,64*64)
+        x = x.view(batch_size,3,64*64)
         x = self.fc1(x)
         x = F.leaky_relu(x)
         x = self.fc2(x)
@@ -46,7 +46,7 @@ class Net(nn.Module):
         x = self.fc4(x)
 #        print(x.shape)
         x = F.tanh(x)
-        x = x.view(5,3, 64, 64)
+        x = x.view(batch_size,3, 64, 64)
         return x
 
 
@@ -56,7 +56,6 @@ class Net(nn.Module):
         for s in size:
             num_features *= s
         return num_features
-
 
 
 
@@ -125,28 +124,30 @@ model1 = Net()
 model1 = model1.to(device)
 model2 = DistilledCNN.Net()
 model2 = model2.to(device)
-criterion1 = InformatiCupLoss.apply
+#criterion1 = InformatiCupLoss.apply
 criterion2 = nn.L1Loss()
 
-optimizer1 = optim.SGD(model1.parameters(), lr=0.01, momentum=0.9)
-optimizer2 = optim.SGD(model2.parameters(), lr=0.01, momentum=0.9)
-num_epochs = 61
-target = torch.FloatTensor([[1],[1],[1],[1],[1]])
-target = target.squeeze()
+optimizer1 = optim.SGD(model1.parameters(), lr=0.9, momentum=0.9)
+optimizer2 = optim.SGD(model2.parameters(), lr=0.6, momentum=0.9)
+num_epochs = 100000
+target = torch.ones(batch_size)
+target = target.unsqueeze(1)
 
 
 
-def training(model = model, optimizer = optimizer, num_epochs = num_epochs):
+def training(num_epochs = num_epochs):
     
     print("start training...")
     since = time.time()
-    model.train()
+    model1.train()
+    model2.train()
     
     for epoch in range(num_epochs):
         timestart_epoch = time.time()
         print()
         print("Epoch {}/{}".format(epoch, num_epochs-1))
-        running_loss = 0.0
+        running_loss1 = 0.0
+        running_loss2 = 0.0
         running_corrects = 0.0
         
         for i, data in enumerate(trainloader, 0):
@@ -163,20 +164,25 @@ def training(model = model, optimizer = optimizer, num_epochs = num_epochs):
             # forward + backward + optimize
             output1 = model1(inputs)
             output2 = model2(output1)
+            #print(output2)
+            loss1 = criterion2(output2, target)
+            loss1.backward(retain_graph=True) 
+            optimizer1.step()
 
             
-            loss2 = criterion1(output2)
-            loss1 = criterion2(output2) 
+            loss2 = model2.loss(output1, output2)
+            #print(loss2)
+            #exit()
             loss2.backward()
             optimizer2.step()
-            optimizer1.zero_grad()
-            loss1.backward()
-            optimizer1.step()
+            #optimizer1.zero_grad()
+            #loss1.backward()
+            #optimizer1.step()
 
 
             # print statistics
-            running_loss1 += output2.item() * inputs.size(0)
-            running_loss2 += loss.item() * inputs.size(0)
+            running_loss1 += loss1.item() * inputs.size(0)
+            running_loss2 += loss2.item() * inputs.size(0)
             #running_corrects += torch.sum(predicted.data == labels.data)
 
         epoch_loss1 = running_loss1 / train_size
@@ -192,45 +198,10 @@ def training(model = model, optimizer = optimizer, num_epochs = num_epochs):
     time_elapsed = time.time() - since
     print("finished training in {:.0f}m {:.0f}s.".format(time_elapsed // 60, time_elapsed % 60))
     print("saving the model...")
-    torch.save(model.state_dict(), "saved_model_state_AdvGenNet_{}.pth".format(epoch))
+    torch.save(model1.state_dict(), "saved_model_state_AdvGenNetGenerator_{}.pth".format(epoch))
+    torch.save(model2.state_dict(), "saved_model_state_AdvGenNetDistilledCNN_{}.pth".format(epoch))
     print("saved the model.")
 
-
-
-def testing(epoch, model = model):
-    print("start testing...")
-    model.eval()
-    with torch.no_grad():
-        
-        running_loss = 0.0
-        running_corrects = 0.0
-        
-        for data in testloader:
-            # get the inputs
-            inputs, labels = data
-            inputs, labels = inputs.to(device), labels.to(device)
-
-    
-            # forward + backward + optimize
-            outputs = model(inputs)
-            _, predicted = torch.max(outputs, 1)
-            
-            loss = criterion(outputs, labels)
-    
-            # print statistics
-            running_loss += loss.item() * inputs.size(0)
-            running_corrects += torch.sum(predicted.data == labels.data)
-            
-
-        epoch_loss = running_loss / test_size
-        epoch_accuracy = (running_corrects.item() / test_size) * 100
-        print("Loss: {:.4f} Accuracy: {:.4f}%".format(epoch_loss, epoch_accuracy))
-    
-#    print('Accuracy of the network on the test images: {}'.format(epoch_accuracy))
-    print("finished testing.")
-    print("saving the model...")
-    torch.save(model.state_dict(), "saved_model_state_AdvGenNet_{}.pth".format(epoch))
-    print("saved the model.")
 
 
 if __name__ == "__main__":
