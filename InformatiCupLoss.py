@@ -2,12 +2,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader#, random_split
 from torchvision import transforms, utils
 from torchvision.datasets import ImageFolder
 from PIL import Image
 from torch.autograd import Variable
-from torchviz import make_dot, make_dot_from_trace
 import matplotlib.pyplot as plt
 import numpy as np
 import time
@@ -34,9 +33,7 @@ class InformatiCupLoss(torch.autograd.Function):
         dirs = os.listdir("./AdvTraining/Results" )
         confidences = []
         i = 0
-        criterion = nn.L1Loss()
-        target = torch.FloatTensor([[1],[1],[1],[1],[1]])
-        target = target.squeeze()
+        criterion = nn.CrossEntropyLoss()
         #print(x[0])
 
 
@@ -60,15 +57,4 @@ class InformatiCupLoss(torch.autograd.Function):
             #print(r.json())
         results = torch.FloatTensor(confidences)
         time.sleep(5)
-        return criterion(results, target)
-
-    @staticmethod
-    def backward(ctx, grad_output):
-        """
-        In the backward pass we receive a Tensor containing the gradient of the loss
-        with respect to the output, and we need to compute the gradient of the loss
-        with respect to the input.
-        """
-        input, = ctx.saved_tensors
-        grad_input = grad_output.clone()
-        return grad_input
+        return criterion(input, results)

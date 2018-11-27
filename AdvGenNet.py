@@ -9,18 +9,18 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader#, random_split
 from torchvision import transforms, utils
 from torchvision.datasets import ImageFolder
 from PIL import Image
 from torch.autograd import Variable
-from torchviz import make_dot, make_dot_from_trace
 import InformatiCupLoss
 import matplotlib.pyplot as plt
 import numpy as np
 import time
 import os
 import requests
+import DistilledCNN
 
 
 
@@ -121,12 +121,18 @@ out = utils.make_grid(inputs)
 #imshow(out, title=[class_names[x] for x in classes])
 
 
-model = Net()
-model = model.to(device)
-criterion = InformatiCupLoss()
+model1 = Net()
+model1 = model1.to(device)
+model2 = DistilledCNN.Net()
+model2 = model2.to(device)
+criterion1 = InformatiCupLoss.apply
+criterion2 = nn.L1Loss()
 
-optimizer = optim.SGD(model.parameters(), lr=0.1, momentum=0.9)
+optimizer1 = optim.SGD(model1.parameters(), lr=0.01, momentum=0.9)
+optimizer2 = optim.SGD(model2.parameters(), lr=0.01, momentum=0.9)
 num_epochs = 61
+target = torch.FloatTensor([[1],[1],[1],[1],[1]])
+target = target.squeeze()
 
 
 
@@ -151,23 +157,32 @@ def training(model = model, optimizer = optimizer, num_epochs = num_epochs):
             #print("put inputs and labels on gpu...")
       
             # zero the parameter gradients
-            optimizer.zero_grad()
+            optimizer1.zero_grad()
+            optimizer2.zero_grad()
     
             # forward + backward + optimize
-            outputs = model(inputs)
-            _, predicted = torch.max(outputs, 1)
+            output1 = model1(inputs)
+            output2 = model2(output1)
+
             
-            loss = criterion(outputs)
-            loss.backward()
-            optimizer.step()
+            loss2 = criterion1(output2)
+            loss1 = criterion2(output2) 
+            loss2.backward()
+            optimizer2.step()
+            optimizer1.zero_grad()
+            loss1.backward()
+            optimizer1.step()
+
 
             # print statistics
-            running_loss += loss.item() * inputs.size(0)
+            running_loss1 += output2.item() * inputs.size(0)
+            running_loss2 += loss.item() * inputs.size(0)
             #running_corrects += torch.sum(predicted.data == labels.data)
 
-        epoch_loss = running_loss / train_size
+        epoch_loss1 = running_loss1 / train_size
+        epoch_loss2 = running_loss2 / train_size
         #epoch_accuracy = (running_corrects.item() / train_size) * 100
-        print("Loss: {:.4f}".format(epoch_loss))
+        print("Loss1: {:.4f} Loss2: {:.4f}".format(epoch_loss1, epoch_loss2))
         
         time_elapsed = time.time() - timestart_epoch
         print("finished epoch in {:.0f}m {:.0f}s.".format(time_elapsed // 60, time_elapsed % 60))
