@@ -24,126 +24,90 @@ import DistilledCNN
 
 
 
-class Net(nn.Module):
-    
-    def __init__(self):
-        super(Net, self).__init__()
-        self.fc1 = nn.Linear(64*64, 2048)
-        self.fc2 = nn.Linear(2048, 1024)
-        self.fc3 = nn.Linear(1024, 1024)
-        self.fc4 = nn.Linear(1024, 2048)
-        self.fc5 = nn.Linear(2048, 64*64)
-    
-    
-    def forward(self, x):
-        x = x.view(batch_size,3,64*64)
-        x = self.fc1(x)
-        x = F.softsign(x)
-        x = self.fc2(x)
-        x = F.softsign(x)
-#        print(x.shape)
-        x = self.fc3(x)
-        x = F.softsign(x)
-        x = self.fc4(x)
-        x = F.softsign(x)
-        x = self.fc5(x)
-#        print(x.shape)
-        x = F.softsign(x)
-        x = x.view(batch_size,3, 64, 64)
-        return x
-
-
-    def num_flat_features(self, x):
-        size = x.size()[1:]  # all dimensions except the batch dimension
-        num_features = 1
-        for s in size:
-            num_features *= s
-        return num_features
-
 class GenNet(nn.Module):
 
     def __init__(self):
-        super(Net, self).__init__()
+        super(GenNet, self).__init__()
         self.conv1 = nn.Conv2d(3, 8, kernel_size=3, stride=1)
-        self.norm1 = nn.InstanceNorm1d(8)
-        self.conv2 = nn.Conv2d(8, 16, kernel_size=3, stride=2)
-        self.norm2 = nn.InstanceNorm1d(16)
-        self.conv3 = nn.Conv2d(16, 32, kernel_size=3, stride=2)
-        self.norm3 = nn.InstanceNorm1d(32)
-        self.res1a = nn.Conv2d(32, 32, kernel_size=3, stride=1)
-        self.norm4 = nn.InstanceNorm1d(32)
-        self.res1b = nn.Conv2d(32, 32, kernel_size=3, stride=1)
-        self.norm5 = nn.InstanceNorm1d(32)
-        self.res2a = nn.Conv2d(32, 32, kernel_size=3, stride=1)
-        self.norm6 = nn.InstanceNorm1d(32)
-        self.res2b = nn.Conv2d(32, 32, kernel_size=3, stride=1)
-        self.norm7 = nn.InstanceNorm1d(32)
-        self.res3a = nn.Conv2d(32, 32, kernel_size=3, stride=1)
-        self.norm8 = nn.InstanceNorm1d(32)
-        self.res3b = nn.Conv2d(32, 32, kernel_size=3, stride=1)
-        self.norm9 = nn.InstanceNorm1d(32)
-        self.res4a = nn.Conv2d(32, 32, kernel_size=3, stride=1)
-        self.norm10 = nn.InstanceNorm1d(32)
-        self.res4b = nn.Conv2d(32, 32, kernel_size=3, stride=1)
-        self.norm11 = nn.InstanceNorm1d(32)
-        self.unconv1 = nn.Conv2d(32, 16, kernel_size=3, stride=0.5)
-        self.norm12 = nn.InstanceNorm1d(16)
-        self.unconv2 = nn.Conv2d(16, 8, kernel_size=3, stride=0.5)
-        self.norm13 = nn.InstanceNorm1d(8)
+        self.norm1 = nn.InstanceNorm2d(8)
+        self.conv2 = nn.Conv2d(8, 16, kernel_size=3, stride=1, padding=1)
+        self.norm2 = nn.InstanceNorm2d(16)
+        self.conv3 = nn.Conv2d(16, 32, kernel_size=3, stride=1, padding=1)
+        self.norm3 = nn.InstanceNorm2d(32)
+        self.res1a = nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1)
+        self.norm4 = nn.InstanceNorm2d(32)
+        self.res1b = nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1)
+        self.norm5 = nn.InstanceNorm2d(32)
+        self.res2a = nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1)
+        self.norm6 = nn.InstanceNorm2d(32)
+        self.res2b = nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1)
+        self.norm7 = nn.InstanceNorm2d(32)
+        self.res3a = nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1)
+        self.norm8 = nn.InstanceNorm2d(32)
+        self.res3b = nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1)
+        self.norm9 = nn.InstanceNorm2d(32)
+        self.res4a = nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1)
+        self.norm10 = nn.InstanceNorm2d(32)
+        self.res4b = nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1)
+        self.norm11 = nn.InstanceNorm2d(32)
+        self.unconv1 = nn.ConvTranspose2d(32, 16, kernel_size=3, stride=1)
+        self.norm12 = nn.InstanceNorm2d(16)
+        self.unconv2 = nn.ConvTranspose2d(16, 8, kernel_size=3, stride=1)
+        self.norm13 = nn.InstanceNorm2d(8)
         self.conv4 = nn.Conv2d(8, 3, kernel_size=3, stride=1)
-        self.norm14 = nn.InstanceNorm1d(3)
+        self.norm14 = nn.InstanceNorm2d(3)
 
     def forward(self, x):
         x = self.conv1(x)
         x = self.norm1(x)
-        x = F.ReLU(x)
+        x = F.softsign(x)
         x = self.conv2(x)
         x = self.norm2(x)
-        x = F.ReLU(x)
+        x = F.softsign(x)
         x = self.conv3(x)
         x = self.norm3(x)
-        x = F.ReLU(x)
+        x = F.softsign(x)
         y = x
         x = self.res1a(x)
         x = self.norm4(x)
-        x = F.ReLU(x)
+        x = F.softsign(x)
         x = self.res1b(x)
         x = x + y
         x = self.norm5(x)
-        x = F.ReLU(x)
+        x = F.softsign(x)
         y = x
         x = self.res2a(x)
         x = self.norm6(x)
-        x = F.ReLU(x)
+        x = F.softsign(x)
         x = self.res2b(x)
         x = x + y
         x = self.norm7(x)
-        x = F.ReLU(x)
+        x = F.softsign(x)
         y = x
         x = self.res3a(x)
         x = self.norm8(x)
-        x = F.ReLU(x)
+        x = F.softsign(x)
         x = self.res3b(x)
         x = x + y
         x = self.norm9(x)
-        x = F.ReLU(x)
+        x = F.softsign(x)
         y = x
         x = self.res4a(x)
         x = self.norm10(x)
-        x = F.ReLU(x)
+        x = F.softsign(x)
         x = self.res4b(x)
         x = x + y
         x = self.norm11(x)
-        x = F.ReLU(x)
+        x = F.softsign(x)
         x = self.unconv1(x)
         x = self.norm12(x)
-        x = F.ReLU(x)
+        x = F.softsign(x)
         x = self.unconv2(x)
         x = self.norm13(x)
-        x = F.ReLU(x)
+        x = F.softsign(x)
         x = self.conv4(x)
         x = self.norm14(x)
-        x = F.ReLU(x)
+        x = F.softsign(x)
         return x
 
 
@@ -253,6 +217,8 @@ def training(num_epochs = num_epochs):
     
             # forward + backward + optimize
             output1 = model1(inputs)
+            #print((output1 + inputs) / 2)
+            #exit()
             output2 = model2(output1 + inputs)
             #print(output2)
             #print(output2.shape)
