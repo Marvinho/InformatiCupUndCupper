@@ -47,9 +47,9 @@ class Net(nn.Module):
         x = F.relu(x)
 #        print(x.shape)
         x = x.view(x.size(0), -1)
-        #x = self.dropout(x)
+        x = self.dropout(x)
         x = F.relu(self.fc1(x))
-        #x = self.dropout(x)
+        x = self.dropout(x)
         x = self.fc2(x)
         return F.sigmoid(x)
 
@@ -77,8 +77,8 @@ class Net(nn.Module):
 
         while i < 5: 
             y = pics[i]     #remove batch dimension # B X C H X W ==> C X H X W
-            y = y.mul(torch.FloatTensor(std).to(device).view(3,1,1))
-            y = y.add(torch.FloatTensor(mean).to(device).view(3,1,1))
+           # y = y.mul(torch.FloatTensor(std).to(device).view(3,1,1))
+            #y = y.add(torch.FloatTensor(mean).to(device).view(3,1,1))
             y = y.detach().to("cpu").numpy()#reverse of normalization op- "unnormalize"
             y = np.transpose( y , (1,2,0))   # C X H X W  ==>   H X W X C
             #y = np.clip(y, 0, 1)

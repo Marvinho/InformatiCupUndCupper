@@ -21,6 +21,7 @@ import time
 import os
 import requests
 import DistilledCNN
+from PIL import Image
 
 
 
@@ -128,12 +129,12 @@ testdatapath = "./AdvTraining/Images"
 data_transforms = {
         "train": transforms.Compose([transforms.Resize(size = image_size), 
                             transforms.ToTensor(), 
-                            transforms.Normalize(mean, std)]),
+                            ]),
         "test": transforms.Compose([transforms.Resize(size = image_size), 
                             transforms.ToTensor(), 
                             transforms.Normalize(mean, std)])
     }
-
+#transforms.Normalize(mean, std)
 #print(data_transforms["train"])
 
 train_data = ImageFolder(root = traindatapath, transform = data_transforms["train"])
@@ -181,7 +182,7 @@ model2 = model2.to(device)
 criterion2 = nn.L1Loss()
 
 optimizer1 = optim.Adam(model1.parameters(), lr=0.001)
-optimizer2 = optim.Adam(model2.parameters(), lr=0.0001)
+optimizer2 = optim.Adam(model2.parameters(), lr=0.001)
 num_epochs = 100000
 target = torch.ones(batch_size)
 target = target.unsqueeze(1)
@@ -208,6 +209,8 @@ def training(num_epochs = num_epochs):
             #print(data)
             inputs, labels = data
             inputs, labels = inputs.to(device), labels.to(device)
+            #print(inputs)
+            #exit()
             #inputs = Variable(inputs, requires_grad= True)
             #print("put inputs and labels on gpu...")
       
@@ -223,31 +226,40 @@ def training(num_epochs = num_epochs):
             #print(output2)
             #print(output2.shape)
             loss1 = criterion2(output2, target)
-            loss1.backward(retain_graph=True) 
-            optimizer1.step()
-
-            
-            loss2 = model2.loss(output1, output2)
-            #print(loss2)
-            #exit()
-            if(epoch < 2):
-                optimizer2.zero_grad()
+            if(epoch % 4 == 0) or (epoch < 10):
+                loss2 = model2.loss(output1, output2)
                 loss2.backward()
                 optimizer2.step()
+                running_loss2 += loss2.item() * inputs.size(0)
+            else:
+                loss1.backward() 
+                optimizer1.step()
+                running_loss1 += loss1.item() * inputs.size(0)
+            #optimizer2.zero_grad()
+
+            
+            #loss2 = model2.loss(output1, output2)
+            #print(loss2)
+            #exit()
+            #if(epoch < 2):
+            #optimizer2.zero_grad()
+            #loss2.backward()
+            #optimizer2.step()
             #optimizer1.zero_grad()
             #loss1.backward()
             #optimizer1.step()
 
 
             # print statistics
-            running_loss1 += loss1.item() * inputs.size(0)
-            running_loss2 += loss2.item() * inputs.size(0)
+            #running_loss1 += loss1.item() * inputs.size(0)
+            #running_loss2 += loss2.item() * inputs.size(0)
             #running_corrects += torch.sum(predicted.data == labels.data)
-
-        epoch_loss1 = running_loss1 / train_size
-        epoch_loss2 = running_loss2 / train_size
-        #epoch_accuracy = (running_corrects.item() / train_size) * 100
-        print("Loss1: {:.4f} Loss2: {:.4f}".format(epoch_loss1, epoch_loss2))
+        if(epoch % 4 == 0) or (epoch < 10):
+            epoch_loss2 = running_loss2 / train_size
+            print("DistillationLoss: {:.4f}".format(epoch_loss2))
+        else:
+            epoch_loss1 = running_loss1 / train_size
+            print("GeneratorLoss: {:.4f}".format(epoch_loss1))
         
         time_elapsed = time.time() - timestart_epoch
         print("finished epoch in {:.0f}m {:.0f}s.".format(time_elapsed // 60, time_elapsed % 60))
