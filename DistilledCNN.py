@@ -47,9 +47,9 @@ class Net(nn.Module):
         x = F.relu(x)
 #        print(x.shape)
         x = x.view(x.size(0), -1)
-        x = self.dropout(x)
+        #x = self.dropout(x)
         x = F.relu(self.fc1(x))
-        x = self.dropout(x)
+        #x = self.dropout(x)
         x = self.fc2(x)
         return F.sigmoid(x)
 

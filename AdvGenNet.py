@@ -28,24 +28,27 @@ class Net(nn.Module):
     
     def __init__(self):
         super(Net, self).__init__()
-        self.fc1 = nn.Linear(64*64, 256)
-        self.fc2 = nn.Linear(256, 512)
-        self.fc3 = nn.Linear(512, 1024)
-        self.fc4 = nn.Linear(1024, 64*64)
+        self.fc1 = nn.Linear(64*64, 2048)
+        self.fc2 = nn.Linear(2048, 1024)
+        self.fc3 = nn.Linear(1024, 1024)
+        self.fc4 = nn.Linear(1024, 2048)
+        self.fc5 = nn.Linear(2048, 64*64)
     
     
     def forward(self, x):
         x = x.view(batch_size,3,64*64)
         x = self.fc1(x)
-        x = F.leaky_relu(x)
+        x = F.softsign(x)
         x = self.fc2(x)
-        x = F.leaky_relu(x)
+        x = F.softsign(x)
 #        print(x.shape)
         x = self.fc3(x)
-        x = F.leaky_relu(x)
+        x = F.softsign(x)
         x = self.fc4(x)
+        x = F.softsign(x)
+        x = self.fc5(x)
 #        print(x.shape)
-        x = F.tanh(x)
+        x = F.softsign(x)
         x = x.view(batch_size,3, 64, 64)
         return x
 
@@ -69,7 +72,7 @@ image_size = (64,64)
 mean = [0.485, 0.456, 0.406]
 std = [0.229, 0.224, 0.225]
 
-traindatapath = "./AdvTraining/"
+traindatapath = "./AdvTraining/Images"
 testdatapath = "./AdvTraining/Images"
 
 data_transforms = {
@@ -112,10 +115,10 @@ def imshow(inp, title=None):
 
 
 # Get a batch of training data
-inputs, classes = next(iter(trainloader))
+#inputs, classes = next(iter(trainloader))
 
 # Make a grid from batch
-out = utils.make_grid(inputs)
+#out = utils.make_grid(inputs)
 
 #imshow(out, title=[class_names[x] for x in classes])
 
@@ -127,8 +130,8 @@ model2 = model2.to(device)
 #criterion1 = InformatiCupLoss.apply
 criterion2 = nn.L1Loss()
 
-optimizer1 = optim.SGD(model1.parameters(), lr=0.9, momentum=0.9)
-optimizer2 = optim.SGD(model2.parameters(), lr=0.6, momentum=0.9)
+optimizer1 = optim.Adam(model1.parameters(), lr=0.01)
+optimizer2 = optim.Adam(model2.parameters(), lr=0.0001)
 num_epochs = 100000
 target = torch.ones(batch_size)
 target = target.unsqueeze(1)
@@ -150,11 +153,12 @@ def training(num_epochs = num_epochs):
         running_loss2 = 0.0
         running_corrects = 0.0
         
-        for i, data in enumerate(trainloader, 0):
+        for data in trainloader:
             # get the inputs
+            #print(data)
             inputs, labels = data
             inputs, labels = inputs.to(device), labels.to(device)
-            inputs = Variable(inputs, requires_grad= True)
+            #inputs = Variable(inputs, requires_grad= True)
             #print("put inputs and labels on gpu...")
       
             # zero the parameter gradients
@@ -163,8 +167,9 @@ def training(num_epochs = num_epochs):
     
             # forward + backward + optimize
             output1 = model1(inputs)
-            output2 = model2(output1)
+            output2 = model2(output1 + inputs)
             #print(output2)
+            #print(output2.shape)
             loss1 = criterion2(output2, target)
             loss1.backward(retain_graph=True) 
             optimizer1.step()
@@ -173,8 +178,10 @@ def training(num_epochs = num_epochs):
             loss2 = model2.loss(output1, output2)
             #print(loss2)
             #exit()
-            loss2.backward()
-            optimizer2.step()
+            if(epoch < 2):
+                optimizer2.zero_grad()
+                loss2.backward()
+                optimizer2.step()
             #optimizer1.zero_grad()
             #loss1.backward()
             #optimizer1.step()
