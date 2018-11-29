@@ -226,7 +226,7 @@ def training(num_epochs = num_epochs):
             #print(output2)
             #print(output2.shape)
             loss1 = criterion2(output2, target)
-            if(epoch % 4 == 0) or (epoch < 10):
+            if(epoch % 6 != 0) or (epoch < 15):
                 loss2 = model2.loss(output1, output2)
                 loss2.backward()
                 optimizer2.step()
@@ -254,7 +254,7 @@ def training(num_epochs = num_epochs):
             #running_loss1 += loss1.item() * inputs.size(0)
             #running_loss2 += loss2.item() * inputs.size(0)
             #running_corrects += torch.sum(predicted.data == labels.data)
-        if(epoch % 4 == 0) or (epoch < 10):
+        if(epoch % 6 != 0) or (epoch < 15):
             epoch_loss2 = running_loss2 / train_size
             print("DistillationLoss: {:.4f}".format(epoch_loss2))
         else:
