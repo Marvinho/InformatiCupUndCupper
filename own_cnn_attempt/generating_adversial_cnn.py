@@ -31,12 +31,11 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(device)
 
 image_size = (64,64)
-mean = [0.485, 0.456, 0.406]
-std = [0.229, 0.224, 0.225]
+#mean = [0.485, 0.456, 0.406]
+#std = [0.229, 0.224, 0.225]
 
 preprocess = transforms.Compose([transforms.Resize(size = image_size), 
-                            transforms.ToTensor(), 
-                            transforms.Normalize(mean, std)])
+                            transforms.ToTensor()])
 
     
 testdatapath = "./Images/"
@@ -46,8 +45,8 @@ except:
     print("YOU NEED IMAGES IN ./IMAGES/ORIGINALS")
     print("CREATING RANDOM IMAGE...")
     generateimage.createImage(random = True)
+    test_data = ImageFolder(root = testdatapath, transform = preprocess)
 
-test_data = ImageFolder(root = testdatapath, transform = preprocess)
 testloader = DataLoader(dataset = test_data)
 
 
@@ -97,7 +96,7 @@ def createIterativeAdversarial(image, y_target_label, output, x_pred, x_pred_pro
     y_target = y_target.to(device)
              
     epsilons = [0.25]
-    num_steps = 71
+    num_steps = 81
     alphas = [0.025]
     
     for alpha in alphas:
@@ -117,7 +116,7 @@ def createIterativeAdversarial(image, y_target_label, output, x_pred, x_pred_pro
                 x_adversarial = image + total_grad
                 image.data = x_adversarial
                 
-                if(num_step == 70):
+                if(num_step == 80):
                     output_adv = model.forward(Variable(image))
                     x_adv_pred = torch.max(output_adv.data, 1)[1][0]
                     op_adv_probs = F.softmax(output_adv, dim=1)
@@ -146,15 +145,15 @@ def imshow(inp, title=None):
 def visualize(x, x_adv, x_grad, epsilon, iteration, alpha, clean_pred, adv_pred, clean_prob, adv_prob, y_target_label):
     
     x = x.squeeze(0)     #remove batch dimension # B X C H X W ==> C X H X W
-    x = x.mul(torch.FloatTensor(std).to(device).view(3,1,1))
-    x = x.add(torch.FloatTensor(mean).to(device).view(3,1,1))
+#    x = x.mul(torch.FloatTensor(std).to(device).view(3,1,1))
+#    x = x.add(torch.FloatTensor(mean).to(device).view(3,1,1))
     x = x.detach().to("cpu").numpy()#reverse of normalization op- "unnormalize"
     x = np.transpose( x , (1,2,0))   # C X H X W  ==>   H X W X C
     x = np.clip(x, 0, 1)
 
     x_adv = x_adv.squeeze(0)
-    x_adv = x_adv.mul(torch.FloatTensor(std).to(device).view(3,1,1))
-    x_adv = x_adv.add(torch.FloatTensor(mean).to(device).view(3,1,1)).to("cpu").numpy()#reverse of normalization op
+#    x_adv = x_adv.mul(torch.FloatTensor(std).to(device).view(3,1,1))
+#    x_adv = x_adv.add(torch.FloatTensor(mean).to(device).view(3,1,1)).to("cpu").numpy()#reverse of normalization op
     x_adv = np.transpose( x_adv , (1,2,0))   # C X H X W  ==>   H X W X C
     x_adv = np.clip(x_adv, 0, 1)
     
