@@ -128,7 +128,7 @@ testdatapath = "./AdvTraining/Images"
 
 data_transforms = {
         "train": transforms.Compose([transforms.Resize(size = image_size), 
-                            transforms.ToTensor(), 
+                            transforms.ToTensor()
                             ]),
         "test": transforms.Compose([transforms.Resize(size = image_size), 
                             transforms.ToTensor(), 
@@ -173,19 +173,19 @@ def imshow(inp, title=None):
 
 #imshow(out, title=[class_names[x] for x in classes])
 
-
 model1 = GenNet()
 model1 = model1.to(device)
 model2 = DistilledCNN.Net()
 model2 = model2.to(device)
 #criterion1 = InformatiCupLoss.apply
-criterion2 = nn.L1Loss()
+criterion2 = nn.MSELoss()
 
 optimizer1 = optim.Adam(model1.parameters(), lr=0.001)
-optimizer2 = optim.Adam(model2.parameters(), lr=0.001)
+optimizer2 = optim.Adam(model2.parameters(), lr=0.0005)
 num_epochs = 100000
 target = torch.ones(batch_size)
 target = target.unsqueeze(1)
+
 
 
 
@@ -203,14 +203,15 @@ def training(num_epochs = num_epochs):
         running_loss1 = 0.0
         running_loss2 = 0.0
         running_corrects = 0.0
+        batcher = 0
         
         for data in trainloader:
             # get the inputs
             #print(data)
+            server_error = True
             inputs, labels = data
             inputs, labels = inputs.to(device), labels.to(device)
             #print(inputs)
-            #exit()
             #inputs = Variable(inputs, requires_grad= True)
             #print("put inputs and labels on gpu...")
       
@@ -220,22 +221,39 @@ def training(num_epochs = num_epochs):
     
             # forward + backward + optimize
             output1 = model1(inputs)
+            i = 0
+            while i < batch_size: 
+                y = output1[i] + inputs[i]     #remove batch dimension # B X C H X W ==> C X H X W
+           # y = y.mul(torch.FloatTensor(std).to(device).view(3,1,1))
+            #y = y.add(torch.FloatTensor(mean).to(device).view(3,1,1))
+                y = y.detach().to("cpu").numpy()#reverse of normalization op- "unnormalize"
+                y = np.transpose( y , (1,2,0))   # C X H X W  ==>   H X W X C
+            #y = np.clip(y, 0, 1)
+                y = Image.fromarray(np.uint8(y*255), "RGB")
+                y.save("./Distilled/adv_img_{}_{}.png".format(i, batcher))
+                i = i + 1
             #print((output1 + inputs) / 2)
             #exit()
             output2 = model2(output1 + inputs)
-            #print(output2)
             #print(output2.shape)
             loss1 = criterion2(output2, target)
-            if(epoch % 6 != 0) or (epoch < 15):
-                loss2 = model2.loss(output1, output2)
-                loss2.backward()
-                optimizer2.step()
-                running_loss2 += loss2.item() * inputs.size(0)
+            if(epoch % 3 != 0) or (epoch < 10):
+                while(server_error):
+                    try:
+                        loss2 = model2.loss(output1 + inputs, output2)
+                        loss2.backward()
+                        optimizer2.step()
+                        running_loss2 += loss2.item() * inputs.size(0)
+                        server_error = False
+                    except:
+                    	print("Server Error. Trying again.")
+                    	time.sleep(20)
             else:
                 loss1.backward() 
                 optimizer1.step()
                 running_loss1 += loss1.item() * inputs.size(0)
             #optimizer2.zero_grad()
+            batcher = batcher + 1
 
             
             #loss2 = model2.loss(output1, output2)
@@ -254,7 +272,7 @@ def training(num_epochs = num_epochs):
             #running_loss1 += loss1.item() * inputs.size(0)
             #running_loss2 += loss2.item() * inputs.size(0)
             #running_corrects += torch.sum(predicted.data == labels.data)
-        if(epoch % 6 != 0) or (epoch < 15):
+        if(epoch % 3 != 0) or (epoch < 10):
             epoch_loss2 = running_loss2 / train_size
             print("DistillationLoss: {:.4f}".format(epoch_loss2))
         else:
@@ -263,6 +281,9 @@ def training(num_epochs = num_epochs):
         
         time_elapsed = time.time() - timestart_epoch
         print("finished epoch in {:.0f}m {:.0f}s.".format(time_elapsed // 60, time_elapsed % 60))
+        print("saving the model...")
+        torch.save(model1.state_dict(), "saved_model_state_AdvGenNetGenerator.pth")
+        torch.save(model2.state_dict(), "saved_model_state_AdvGenNetDistilledCNN.pth")
         
         
     

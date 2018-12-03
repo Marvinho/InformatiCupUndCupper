@@ -25,31 +25,35 @@ class Net(nn.Module):
     
     def __init__(self):
         super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(3, 16, kernel_size=5)
-        self.conv2 = nn.Conv2d(16, 32, kernel_size = 5)
-        self.conv3 = nn.Conv2d(32, 32, kernel_size = 3)
+        self.conv1 = nn.Conv2d(3, 16, kernel_size=3)
+        self.conv2 = nn.Conv2d(16, 32, kernel_size = 3)
+        self.conv3 = nn.Conv2d(32, 64, kernel_size = 3)
+        self.conv4 = nn.Conv2d(64, 128, kernel_size = 3)
         self.conv_dropout = nn.Dropout2d()
         self.dropout = nn.Dropout()
-        self.fc1 = nn.Linear(32*5*5, 256)
-        self.fc2 = nn.Linear(256, 1)
+        self.fc1 = nn.Linear(21632, 512)
+        self.fc2 = nn.Linear(512, 1)
     
     
     def forward(self, x):
         x = self.conv1(x)
-        x = F.max_pool2d(x, 2)
-        x = F.relu(x)
+        x = F.softsign(x)
         x = self.conv2(x)
+        x = F.softsign(x)
         x = F.max_pool2d(x, 2)
-        x = F.relu(x)
 #        print(x.shape)
         x = self.conv3(x)
+        x = F.softsign(x)
+        x = self.conv4(x)
+        x = F.softsign(x)
         x = F.max_pool2d(x, 2)
-        x = F.relu(x)
-#        print(x.shape)
         x = x.view(x.size(0), -1)
-        x = self.dropout(x)
-        x = F.relu(self.fc1(x))
-        x = self.dropout(x)
+        #print(x.shape)
+        #exit()
+        #x = self.dropout(x)
+        #x = F.softsign(x)
+        x = self.fc1(x)
+        x = F.softsign(x)
         x = self.fc2(x)
         return F.sigmoid(x)
 
@@ -85,19 +89,21 @@ class Net(nn.Module):
             y = Image.fromarray(np.uint8(y*255), "RGB")
             y.save("./AdvTraining/Results/adv_img_{}.png".format(i))
             i = i + 1
-    
+        
         for file in dirs:
-            files = {"image": open("./AdvTraining/Results//{}".format(file), "rb")}
+            files = {"image": open("./AdvTraining/Results/{}".format(file), "rb")}
             r = requests.post(url, data = key, files = files)
             #print(r.json())
             answer = r.json()
             confidences.append(answer[0]['confidence'])
             #print(r.json())
+        
+        print(confidences)
         results = torch.FloatTensor(confidences)
         results = results.unsqueeze(1)
         #print(results)
         #print(x)
         #print(criterion(x, results))
         #exit()
-        time.sleep(5)
+        time.sleep(6)
         return criterion(x, results)
