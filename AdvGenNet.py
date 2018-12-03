@@ -9,54 +9,107 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader#, random_split
 from torchvision import transforms, utils
 from torchvision.datasets import ImageFolder
 from PIL import Image
 from torch.autograd import Variable
-from torchviz import make_dot, make_dot_from_trace
 import InformatiCupLoss
 import matplotlib.pyplot as plt
 import numpy as np
 import time
 import os
 import requests
+import DistilledCNN
+from PIL import Image
 
 
 
-class Net(nn.Module):
-    
+class GenNet(nn.Module):
+
     def __init__(self):
-        super(Net, self).__init__()
-        self.fc1 = nn.Linear(64*64, 256)
-        self.fc2 = nn.Linear(256, 512)
-        self.fc3 = nn.Linear(512, 1024)
-        self.fc4 = nn.Linear(1024, 64*64)
-    
-    
+        super(GenNet, self).__init__()
+        self.conv1 = nn.Conv2d(3, 8, kernel_size=3, stride=1)
+        self.norm1 = nn.InstanceNorm2d(8)
+        self.conv2 = nn.Conv2d(8, 16, kernel_size=3, stride=1, padding=1)
+        self.norm2 = nn.InstanceNorm2d(16)
+        self.conv3 = nn.Conv2d(16, 32, kernel_size=3, stride=1, padding=1)
+        self.norm3 = nn.InstanceNorm2d(32)
+        self.res1a = nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1)
+        self.norm4 = nn.InstanceNorm2d(32)
+        self.res1b = nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1)
+        self.norm5 = nn.InstanceNorm2d(32)
+        self.res2a = nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1)
+        self.norm6 = nn.InstanceNorm2d(32)
+        self.res2b = nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1)
+        self.norm7 = nn.InstanceNorm2d(32)
+        self.res3a = nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1)
+        self.norm8 = nn.InstanceNorm2d(32)
+        self.res3b = nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1)
+        self.norm9 = nn.InstanceNorm2d(32)
+        self.res4a = nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1)
+        self.norm10 = nn.InstanceNorm2d(32)
+        self.res4b = nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1)
+        self.norm11 = nn.InstanceNorm2d(32)
+        self.unconv1 = nn.ConvTranspose2d(32, 16, kernel_size=3, stride=1)
+        self.norm12 = nn.InstanceNorm2d(16)
+        self.unconv2 = nn.ConvTranspose2d(16, 8, kernel_size=3, stride=1)
+        self.norm13 = nn.InstanceNorm2d(8)
+        self.conv4 = nn.Conv2d(8, 3, kernel_size=3, stride=1)
+        self.norm14 = nn.InstanceNorm2d(3)
+
     def forward(self, x):
-        x = x.view(5,3,64*64)
-        x = self.fc1(x)
-        x = F.leaky_relu(x)
-        x = self.fc2(x)
-        x = F.leaky_relu(x)
-#        print(x.shape)
-        x = self.fc3(x)
-        x = F.leaky_relu(x)
-        x = self.fc4(x)
-#        print(x.shape)
-        x = F.tanh(x)
-        x = x.view(5,3, 64, 64)
+        x = self.conv1(x)
+        x = self.norm1(x)
+        x = F.softsign(x)
+        x = self.conv2(x)
+        x = self.norm2(x)
+        x = F.softsign(x)
+        x = self.conv3(x)
+        x = self.norm3(x)
+        x = F.softsign(x)
+        y = x
+        x = self.res1a(x)
+        x = self.norm4(x)
+        x = F.softsign(x)
+        x = self.res1b(x)
+        x = x + y
+        x = self.norm5(x)
+        x = F.softsign(x)
+        y = x
+        x = self.res2a(x)
+        x = self.norm6(x)
+        x = F.softsign(x)
+        x = self.res2b(x)
+        x = x + y
+        x = self.norm7(x)
+        x = F.softsign(x)
+        y = x
+        x = self.res3a(x)
+        x = self.norm8(x)
+        x = F.softsign(x)
+        x = self.res3b(x)
+        x = x + y
+        x = self.norm9(x)
+        x = F.softsign(x)
+        y = x
+        x = self.res4a(x)
+        x = self.norm10(x)
+        x = F.softsign(x)
+        x = self.res4b(x)
+        x = x + y
+        x = self.norm11(x)
+        x = F.softsign(x)
+        x = self.unconv1(x)
+        x = self.norm12(x)
+        x = F.softsign(x)
+        x = self.unconv2(x)
+        x = self.norm13(x)
+        x = F.softsign(x)
+        x = self.conv4(x)
+        x = self.norm14(x)
+        x = F.softsign(x)
         return x
-
-
-    def num_flat_features(self, x):
-        size = x.size()[1:]  # all dimensions except the batch dimension
-        num_features = 1
-        for s in size:
-            num_features *= s
-        return num_features
-
 
 
 
@@ -70,18 +123,18 @@ image_size = (64,64)
 mean = [0.485, 0.456, 0.406]
 std = [0.229, 0.224, 0.225]
 
-traindatapath = "./AdvTraining/"
+traindatapath = "./AdvTraining/Images"
 testdatapath = "./AdvTraining/Images"
 
 data_transforms = {
         "train": transforms.Compose([transforms.Resize(size = image_size), 
-                            transforms.ToTensor(), 
-                            transforms.Normalize(mean, std)]),
+                            transforms.ToTensor()
+                            ]),
         "test": transforms.Compose([transforms.Resize(size = image_size), 
                             transforms.ToTensor(), 
                             transforms.Normalize(mean, std)])
     }
-
+#transforms.Normalize(mean, std)
 #print(data_transforms["train"])
 
 train_data = ImageFolder(root = traindatapath, transform = data_transforms["train"])
@@ -113,109 +166,134 @@ def imshow(inp, title=None):
 
 
 # Get a batch of training data
-inputs, classes = next(iter(trainloader))
+#inputs, classes = next(iter(trainloader))
 
 # Make a grid from batch
-out = utils.make_grid(inputs)
+#out = utils.make_grid(inputs)
 
 #imshow(out, title=[class_names[x] for x in classes])
 
+model1 = GenNet()
+model1 = model1.to(device)
+model2 = DistilledCNN.Net()
+model2 = model2.to(device)
+#criterion1 = InformatiCupLoss.apply
+criterion2 = nn.MSELoss()
 
-model = Net()
-model = model.to(device)
-criterion = InformatiCupLoss()
-
-optimizer = optim.SGD(model.parameters(), lr=0.1, momentum=0.9)
-num_epochs = 61
-
+optimizer1 = optim.Adam(model1.parameters(), lr=0.001)
+optimizer2 = optim.Adam(model2.parameters(), lr=0.0005)
+num_epochs = 100000
+target = torch.ones(batch_size)
+target = target.unsqueeze(1)
 
 
-def training(model = model, optimizer = optimizer, num_epochs = num_epochs):
+
+
+def training(num_epochs = num_epochs):
     
     print("start training...")
     since = time.time()
-    model.train()
+    model1.train()
+    model2.train()
     
     for epoch in range(num_epochs):
         timestart_epoch = time.time()
         print()
         print("Epoch {}/{}".format(epoch, num_epochs-1))
-        running_loss = 0.0
+        running_loss1 = 0.0
+        running_loss2 = 0.0
         running_corrects = 0.0
+        batcher = 0
         
-        for i, data in enumerate(trainloader, 0):
+        for data in trainloader:
             # get the inputs
+            #print(data)
+            server_error = True
             inputs, labels = data
             inputs, labels = inputs.to(device), labels.to(device)
-            inputs = Variable(inputs, requires_grad= True)
+            #print(inputs)
+            #inputs = Variable(inputs, requires_grad= True)
             #print("put inputs and labels on gpu...")
       
             # zero the parameter gradients
-            optimizer.zero_grad()
+            optimizer1.zero_grad()
+            optimizer2.zero_grad()
     
             # forward + backward + optimize
-            outputs = model(inputs)
-            _, predicted = torch.max(outputs, 1)
+            output1 = model1(inputs)
+            i = 0
+            while i < batch_size: 
+                y = output1[i] + inputs[i]     #remove batch dimension # B X C H X W ==> C X H X W
+           # y = y.mul(torch.FloatTensor(std).to(device).view(3,1,1))
+            #y = y.add(torch.FloatTensor(mean).to(device).view(3,1,1))
+                y = y.detach().to("cpu").numpy()#reverse of normalization op- "unnormalize"
+                y = np.transpose( y , (1,2,0))   # C X H X W  ==>   H X W X C
+            #y = np.clip(y, 0, 1)
+                y = Image.fromarray(np.uint8(y*255), "RGB")
+                y.save("./Distilled/adv_img_{}_{}.png".format(i, batcher))
+                i = i + 1
+            #print((output1 + inputs) / 2)
+            #exit()
+            output2 = model2(output1 + inputs)
+            #print(output2.shape)
+            loss1 = criterion2(output2, target)
+            if(epoch % 3 != 0) or (epoch < 10):
+                while(server_error):
+                    try:
+                        loss2 = model2.loss(output1 + inputs, output2)
+                        loss2.backward()
+                        optimizer2.step()
+                        running_loss2 += loss2.item() * inputs.size(0)
+                        server_error = False
+                    except:
+                    	print("Server Error. Trying again.")
+                    	time.sleep(20)
+            else:
+                loss1.backward() 
+                optimizer1.step()
+                running_loss1 += loss1.item() * inputs.size(0)
+            #optimizer2.zero_grad()
+            batcher = batcher + 1
+
             
-            loss = criterion(outputs)
-            loss.backward()
-            optimizer.step()
+            #loss2 = model2.loss(output1, output2)
+            #print(loss2)
+            #exit()
+            #if(epoch < 2):
+            #optimizer2.zero_grad()
+            #loss2.backward()
+            #optimizer2.step()
+            #optimizer1.zero_grad()
+            #loss1.backward()
+            #optimizer1.step()
+
 
             # print statistics
-            running_loss += loss.item() * inputs.size(0)
+            #running_loss1 += loss1.item() * inputs.size(0)
+            #running_loss2 += loss2.item() * inputs.size(0)
             #running_corrects += torch.sum(predicted.data == labels.data)
-
-        epoch_loss = running_loss / train_size
-        #epoch_accuracy = (running_corrects.item() / train_size) * 100
-        print("Loss: {:.4f}".format(epoch_loss))
+        if(epoch % 3 != 0) or (epoch < 10):
+            epoch_loss2 = running_loss2 / train_size
+            print("DistillationLoss: {:.4f}".format(epoch_loss2))
+        else:
+            epoch_loss1 = running_loss1 / train_size
+            print("GeneratorLoss: {:.4f}".format(epoch_loss1))
         
         time_elapsed = time.time() - timestart_epoch
         print("finished epoch in {:.0f}m {:.0f}s.".format(time_elapsed // 60, time_elapsed % 60))
+        print("saving the model...")
+        torch.save(model1.state_dict(), "saved_model_state_AdvGenNetGenerator.pth")
+        torch.save(model2.state_dict(), "saved_model_state_AdvGenNetDistilledCNN.pth")
         
         
     
     time_elapsed = time.time() - since
     print("finished training in {:.0f}m {:.0f}s.".format(time_elapsed // 60, time_elapsed % 60))
     print("saving the model...")
-    torch.save(model.state_dict(), "saved_model_state_AdvGenNet_{}.pth".format(epoch))
+    torch.save(model1.state_dict(), "saved_model_state_AdvGenNetGenerator_{}.pth".format(epoch))
+    torch.save(model2.state_dict(), "saved_model_state_AdvGenNetDistilledCNN_{}.pth".format(epoch))
     print("saved the model.")
 
-
-
-def testing(epoch, model = model):
-    print("start testing...")
-    model.eval()
-    with torch.no_grad():
-        
-        running_loss = 0.0
-        running_corrects = 0.0
-        
-        for data in testloader:
-            # get the inputs
-            inputs, labels = data
-            inputs, labels = inputs.to(device), labels.to(device)
-
-    
-            # forward + backward + optimize
-            outputs = model(inputs)
-            _, predicted = torch.max(outputs, 1)
-            
-            loss = criterion(outputs, labels)
-    
-            # print statistics
-            running_loss += loss.item() * inputs.size(0)
-            running_corrects += torch.sum(predicted.data == labels.data)
-            
-
-        epoch_loss = running_loss / test_size
-        epoch_accuracy = (running_corrects.item() / test_size) * 100
-        print("Loss: {:.4f} Accuracy: {:.4f}%".format(epoch_loss, epoch_accuracy))
-    
-#    print('Accuracy of the network on the test images: {}'.format(epoch_accuracy))
-    print("finished testing.")
-    print("saving the model...")
-    torch.save(model.state_dict(), "saved_model_state_AdvGenNet_{}.pth".format(epoch))
-    print("saved the model.")
 
 
 if __name__ == "__main__":
