@@ -4,11 +4,13 @@ Created on Sun Nov 18 18:44:21 2018
 
 @author: MRVN
 """
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 
 class Net(nn.Module):
+#    pretrained_model = "saved_model_state_CNN_final.pth"
     
     def __init__(self):
         super(Net, self).__init__()
@@ -47,3 +49,12 @@ class Net(nn.Module):
         for s in size:
             num_features *= s
         return num_features
+    
+    
+    def loadModel(self, pretrained_model):
+        
+        print("loading the model...")  
+        self.load_state_dict(torch.load(pretrained_model))
+        self.eval()
+        print("loaded the model.")
+        

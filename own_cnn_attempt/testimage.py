@@ -24,7 +24,7 @@ def testImagesOnNetwork():
             
             files = {"image": f}
             r = requests.post(url, data = key, files = files)
-            print(r.status_code)
+#            print(r.status_code)
             if(r.status_code != 200):
                 print("too many requests or sth else went wrong")
                 break
@@ -34,7 +34,7 @@ def testImagesOnNetwork():
             all_top_confidences.append([file, top_class, top_confidence])
     #        time.sleep(1)
 
-#    print(all_top_confidences)
+    print(all_top_confidences)
     print()
     print(sorted(all_top_confidences, key=lambda confidence: confidence[2], reverse = True)[:5])
 

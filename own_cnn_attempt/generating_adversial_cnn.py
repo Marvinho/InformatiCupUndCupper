@@ -25,8 +25,6 @@ import generateimage
 
 model = modelcnn.Net()
 
-pretrained_model = "saved_model_state_CNN_final.pth"
-
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(device)
 
@@ -49,16 +47,6 @@ except:
 
 testloader = DataLoader(dataset = test_data)
 
-
-
-
-
-def loadModel(model = model):
-    
-    print("loading the model...")  
-    model.load_state_dict(torch.load(pretrained_model))
-    model.eval()
-    print("loaded the model.")
 
 
 def showPlot(probs):
@@ -96,7 +84,7 @@ def createIterativeAdversarial(image, y_target_label, output, x_pred, x_pred_pro
     y_target = y_target.to(device)
              
     epsilons = [0.25]
-    num_steps = 81
+    num_steps = 26
     alphas = [0.025]
     
     for alpha in alphas:
@@ -116,7 +104,7 @@ def createIterativeAdversarial(image, y_target_label, output, x_pred, x_pred_pro
                 x_adversarial = image + total_grad
                 image.data = x_adversarial
                 
-                if(num_step == 80):
+                if(num_step == 25):
                     output_adv = model.forward(Variable(image))
                     x_adv_pred = torch.max(output_adv.data, 1)[1][0]
                     op_adv_probs = F.softmax(output_adv, dim=1)
@@ -219,9 +207,9 @@ def moveUsedImages():
  
 if __name__ == "__main__":
     
-    loadModel()
+    model.loadModel(pretrained_model = "saved_model_state_CNN_final.pth")
     model = model.to(device)
-    for i in range(43):
+    for i in range(3):
         for data in testloader:            
             image, output, x_pred, x_pred_prob = predictImage(data)
             createIterativeAdversarial(image, i, output, x_pred, x_pred_prob)
