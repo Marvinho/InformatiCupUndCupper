@@ -101,8 +101,6 @@ class Gui():
 #        self.bottom_frame.rowconfigure(0, weight=1)
 #        self.bottom_frame.columnconfigure(0, weight=1)
         
-        def onClickShowBaseFolder():
-            pass
         
         def onClickChooseImage():
             filename = askopenfilename()

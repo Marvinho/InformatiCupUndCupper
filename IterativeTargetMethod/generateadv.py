@@ -93,8 +93,9 @@ class AdvGenerator():
 
     
     def moveUsedImage(self):
+        date_string = time.strftime("%Y-%m-%d-%H_%M_%S")
         source = "./Images/originals/"
-        destination = "./usedImages/"               
+        destination = "./usedImages/UsedImage{}.png".format(date_string)               
         files = os.listdir(source)        
         for file in files:
             shutil.move(os.path.join(source, file), destination)    
