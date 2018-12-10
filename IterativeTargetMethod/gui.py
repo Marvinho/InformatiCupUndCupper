@@ -7,10 +7,10 @@ import modelcnn
 from tkinter import ttk
 
 class Gui():
-    def __init__(self, root):
+    def __init__(self, root=tk.Tk()):
         self.root = root
         root.title("GUI")
-#        root = tk.Tk()
+
         self.mainframe = tk.Frame(root)
         self.top_frame = tk.LabelFrame(self.mainframe, text="1. Select Image", padx=10, pady=10)
         self.middle_frame = tk.LabelFrame(self.mainframe, text="2. Configure Generation", padx=10, pady=10)
@@ -120,6 +120,5 @@ class Gui():
             adv.generateAdv()
 
 if __name__ == "__main__":  
-    root = tk.Tk()
-    gui = Gui(root)   
+    gui = Gui()   
     tk.mainloop()
