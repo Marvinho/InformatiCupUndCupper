@@ -117,7 +117,7 @@ class Gui():
             
         def onClickAdvButton():
             adv = generateadv.AdvGenerator()
-            adv.generateAdv()
+            adv.generateAdv(num_steps=self.iter_var.get(),epsilon=self.epsilon_var.get(), alpha=self.alpha_var.get())
 
 if __name__ == "__main__":  
     gui = Gui()   

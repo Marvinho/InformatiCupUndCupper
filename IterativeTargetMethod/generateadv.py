@@ -38,7 +38,7 @@ class AdvGenerator():
         except:
             print("YOU NEED IMAGES IN ./IMAGES/ORIGINALS")
             print("CREATING RANDOM IMAGE...")
-            generateimage.createImage(random = True)
+            generateimage.createImage(color = True)
             test_data = ImageFolder(root = self.testdatapath, transform = self.preprocess)
         
         testloader = DataLoader(dataset = test_data)
@@ -125,7 +125,7 @@ class AdvGenerator():
             except OSError as e:  ## if failed, report it back to the user ##
                 print ("Error: %s - %s." % (e.filename, e.strerror))
     
-    def generateAdv(self):
+    def generateAdv(self, num_steps, epsilon, alpha):
         model = modelcnn.Net()    
         model.loadModel(pretrained_model = "saved_model_state_CNN_final.pth")
         adv = AdvGenerator()
@@ -140,7 +140,7 @@ class AdvGenerator():
                 image.requires_grad = True
                 output = model.forward(image)
                 
-                adv.createIterativeAdversarial(image, target_label.item(), output, 0.25, 0.025, 31, model)
+                adv.createIterativeAdversarial(image, target_label.item(), output, epsilon, alpha, num_steps, model)
         
         adv.moveUsedImage()        
     
