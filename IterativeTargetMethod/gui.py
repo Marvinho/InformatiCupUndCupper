@@ -110,9 +110,12 @@ class Gui():
         
         def onClickCreateImage():
             generateimage.createImage(self.color_var.get())
+            
+        def onClickShowBaseFolder():
+            generateimage.openDir(foldername="./Images/originals/")
         
         def onClickShowResults():
-            generateimage.openAdvDir()
+            generateimage.openDir(foldername="./adversarials/")
             
         def onClickAdvButton():
             adv = generateadv.AdvGenerator()

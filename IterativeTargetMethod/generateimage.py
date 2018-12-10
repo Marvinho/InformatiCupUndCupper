@@ -33,9 +33,9 @@ def createImage(color):
 def copyImage(src, dst = "./Images/originals/baseImage.png"):
     shutil.copyfile(src, dst)
     
-def openAdvDir():
+def openDir(foldername):
     dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, "./adversarials/")
+    filename = os.path.join(dirname, foldername)
     os.startfile(filename)
 
 def chooseImage(src, dst = "./Images/originals/baseImage.png"):
