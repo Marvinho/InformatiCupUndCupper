@@ -28,9 +28,13 @@ def createImage(color):
     plt.show()    
     print("saving image...")
     date_string = time.strftime("%Y-%m-%d-%H_%M_%S")
+    if not os.path.exists("./Images/originals/"):
+        os.makedirs("./Images/originals/")
     test_image.save("./Images/originals/org_img_{}.png".format(date_string))
 
 def copyImage(src, dst = "./Images/originals/baseImage.png"):
+    if not os.path.exists("./Images/originals/"):
+        os.makedirs("./Images/originals/")
     shutil.copyfile(src, dst)
     
 def openDir(foldername):
@@ -39,6 +43,8 @@ def openDir(foldername):
     os.startfile(filename)
 
 def chooseImage(src, dst = "./Images/originals/baseImage.png"):
+    if not os.path.exists("./Images/originals/"):
+        os.makedirs("./Images/originals/")
     shutil.copyfile(src, dst)
     
 if __name__ == "__main__":

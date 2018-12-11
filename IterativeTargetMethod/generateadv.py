@@ -60,6 +60,8 @@ class AdvGenerator():
         image_path = "./adversarials/adverimg_{}_eps{}_iter{}_alpha{}_label{}.png".format(date_string, 
                                               epsilon, num_step, alpha, target_label)
         print("saving image at {}...".format(image_path))
+        if not os.path.exists("./adversarials/"):
+            os.makedirs("./adversarials/")
         image.save(image_path)
         return image_path
         
@@ -95,7 +97,9 @@ class AdvGenerator():
     def moveUsedImage(self):
         date_string = time.strftime("%Y-%m-%d-%H_%M_%S")
         source = "./Images/originals/"
-        destination = "./usedImages/UsedImage{}.png".format(date_string)               
+        destination = "./usedImages/UsedImage{}.png".format(date_string)
+        if not os.path.exists("./usedImages/UsedImage/"):
+            os.makedirs("./usedImages/UsedImage/")               
         files = os.listdir(source)        
         for file in files:
             shutil.move(os.path.join(source, file), destination)    
@@ -126,10 +130,10 @@ class AdvGenerator():
                 print ("Error: %s - %s." % (e.filename, e.strerror))
     
     def generateAdv(self, num_steps, epsilon, alpha):
-        model = modelcnn.Net()    
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        model = modelcnn.Net()   
         model.loadModel(pretrained_model = "saved_model_state_CNN_final.pth")
         adv = AdvGenerator()
-        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         model = model.to(device)
         
         testloader = adv.loadData()
