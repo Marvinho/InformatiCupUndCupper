@@ -54,7 +54,7 @@ class Net(nn.Module):
     def loadModel(self, pretrained_model):
         
         print("loading the model...")  
-        self.load_state_dict(torch.load(pretrained_model))
+        self.load_state_dict(torch.load(pretrained_model, map_location=lambda storage, loc: storage))
         self.eval()
         print("loaded the model.")
         
