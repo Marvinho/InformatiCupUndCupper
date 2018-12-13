@@ -18,10 +18,13 @@ import shutil
 import modelcnn
 import generateimage
 import requests
+import warnings
 
 class AdvGenerator():
     image_size = (64,64)
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    if (torch.cuda.get_device_capability(0) < (5,0)):
+            device = torch.device("cpu")
     print(device)
     labels = np.arange(43)
     preprocess = transforms.Compose([transforms.Resize(size = image_size), 
@@ -130,12 +133,13 @@ class AdvGenerator():
                 print ("Error: %s - %s." % (e.filename, e.strerror))
     
     def generateAdv(self, num_steps, epsilon, alpha):
-        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        device = torch.device("cuda:0" if torch.cuda.is_available()  else "cpu")
+        if (torch.cuda.get_device_capability(0) < (5,0)):
+            device = torch.device("cpu")
         model = modelcnn.Net()   
         model.loadModel(pretrained_model = "saved_model_state_CNN_final.pth")
         adv = AdvGenerator()
         model = model.to(device)
-        
         testloader = adv.loadData()
         for target_label in adv.labels[:4]:
             for data in testloader:            
@@ -154,8 +158,10 @@ if __name__ == "__main__":
     model.loadModel(pretrained_model = "saved_model_state_CNN_final.pth")
     adv = AdvGenerator()
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+
     model = model.to(device)
-    
+        
     testloader = adv.loadData()
     for target_label in adv.labels[:4]:
         for data in testloader:            
@@ -163,8 +169,8 @@ if __name__ == "__main__":
             image, labels = image.to(device), labels.to(device)
             image.requires_grad = True
             output = model.forward(image)
-            
+                
             adv.createIterativeAdversarial(image, target_label.item(), output, epsilon, alpha, num_steps, model)
-    
+        
     adv.moveUsedImage()
     print("finished.")

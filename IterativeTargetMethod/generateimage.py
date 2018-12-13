@@ -25,7 +25,7 @@ def createImage(color):
         test_image = Image.new("RGB", size = (w, h), color = color)
     
     plt.imshow(test_image)
-    plt.show()    
+    plt.show(block=False)    
     print("saving image...")
     date_string = time.strftime("%Y-%m-%d-%H_%M_%S")
     if not os.path.exists("./Images/originals/"):
