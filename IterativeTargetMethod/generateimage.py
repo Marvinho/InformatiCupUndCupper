@@ -20,7 +20,7 @@ def createImage(color):
     print("creating image...")
     if(color == "Random"):        
         test_image = np.random.randint(256, size = (w, h, 3), dtype = np.uint8)
-        test_image = Image.fromarray(test_image, 'RGB')
+        test_image = Image.fromarray(test_image, "RGB")
     else:   
         test_image = Image.new("RGB", size = (w, h), color = color)
     

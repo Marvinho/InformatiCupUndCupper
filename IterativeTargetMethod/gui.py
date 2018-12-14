@@ -1,9 +1,10 @@
 import tkinter as tk
-from tkinter import N, E, W, S, VERTICAL
+from tkinter import N, E, W, S, VERTICAL, SUNKEN, X
 import generateimage
 from tkinter.filedialog import askopenfilename
 import generateadv
 from tkinter import ttk
+from tkinter import messagebox 
 
 class Gui():
     def __init__(self, root=tk.Tk()):
@@ -33,6 +34,8 @@ class Gui():
         self.target_lbl = tk.Label(self.middle_frame, text="targetlabel:")
         self.target_var = tk.IntVar()
         self.target_entry = tk.Entry(self.middle_frame, textvariable=self.target_var, width=7)
+        self.target_entry.delete(0, "end")
+        self.target_entry.insert(0, -1)
         
         self.iter_lbl = tk.Label(self.middle_frame, text="iterations:")
         self.iter_var = tk.IntVar()
@@ -56,8 +59,10 @@ class Gui():
         self.seperator1 = ttk.Separator(self.middle_frame, orient=VERTICAL)
         self.adv_folder_button = tk.Button(self.middle_frame, text="show adversarials", command=lambda: onClickShowResults(), bg="midnight blue", fg="white", width=16)
         
+        self.status = ttk.Label(root, text="status", borderwidth=1, foreground="green", relief=SUNKEN, anchor=W, width=50)
+        
         self.mainframe.grid(column=0, row=0, sticky=(N, S, E, W), padx=5, pady=5)
-        self.top_frame.grid(column=0, row=0, sticky=(N, S, W, E), padx=5, pady=5)
+        self.top_frame.grid(column=0, row=0, sticky=(W, E), padx=5, pady=5)
         self.middle_frame.grid(column=0, row=1,sticky=(W, E), padx=5, pady=5)
 #        self.bottom_frame.grid(column=0, row=2, sticky=(W, E), padx=5, pady=5)
         
@@ -76,11 +81,13 @@ class Gui():
         self.epsilon_lbl.grid(column=0, row=2, sticky=(E), padx=(25,0))
         self.epsilon_entry.grid(column=1, row=2, sticky=W)
         self.alpha_lbl.grid(column=0, row=3, sticky=(E), padx=(25,0))
-        self.alpha_entry.grid(column=1, row=3, sticky=W)
+        self.alpha_entry.grid(column=1, row=3, sticky=(W))
         self.create_adv_button.grid(column=0, row=4, columnspan=2, padx=(25,0), pady=(0,15))
         
         self.adv_folder_button.grid(column=3, row=0, rowspan=5, sticky=(E, W), padx=(0,15))
         self.seperator1.grid(column=2, row=0, rowspan=5, sticky=(N, S), padx=(50,50))
+        
+        self.status.grid(row=1, columnspan=10, sticky=(W, E), padx=(10), pady=(0))
         
         self.root.rowconfigure(0, weight=1)
         self.root.columnconfigure(0, weight=1)
@@ -110,9 +117,14 @@ class Gui():
         def onClickChooseImage():
             filename = askopenfilename()
             generateimage.chooseImage(filename)
+            self.status.config(foreground="green")
+            self.status.config(text='copied image.')
         
         def onClickCreateImage():
             generateimage.createImage(self.color_var.get())
+            self.status.config(foreground="green")
+            self.status.config(text='created image.')
+
             
         def onClickShowBaseFolder():
             generateimage.openDir(foldername="./Images/originals/")
@@ -121,11 +133,21 @@ class Gui():
             generateimage.openDir(foldername="./adversarials/")
             
         def onClickAdvButton():
+            self.status.config(foreground="green")
+            self.status.config(text='creating adversarials...')
             adv = generateadv.AdvGenerator()
             adv.generateAdv(num_steps=self.iter_var.get(), 
                             epsilon=self.epsilon_var.get(), 
                             alpha=self.alpha_var.get(), 
-                            target=self.target_var.get())
+                            target=self.target_var.get())            
+            messagebox.showinfo(title="targetlabel, classprediction, confidence", 
+                                message=prettyDict(sorted(adv.created_adversarial_list, key=lambda lst: lst[2], reverse=True)))
+            self.status.config(foreground="green")
+            self.status.config(text='created adversarials.')
+            adv.created_adversarial_list.clear()
+        
+        def prettyDict(lst):
+            return "" + "\n".join("{}".format(v) for v in lst) + ""
 
 if __name__ == "__main__":  
     gui = Gui()   

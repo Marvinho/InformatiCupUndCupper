@@ -29,7 +29,8 @@ class AdvGenerator():
     labels = np.arange(43)
     preprocess = transforms.Compose([transforms.Resize(size = image_size), 
                                 transforms.ToTensor()])   
-    testdatapath = "./Images/"    
+    testdatapath = "./Images/"
+    created_adversarial_list = []   
     
     
     def __init__(self):
@@ -92,7 +93,7 @@ class AdvGenerator():
             
         im = self.transformTensorToImage(image.data)
         image_path = self.saveImage(im, epsilon, num_step, alpha, target_label)
-        top_confidence = self.testOnBlackbox(image_path)
+        top_confidence = self.testOnBlackbox(image_path, target_label)
         print("Blackbox confidence: {}".format(top_confidence))
         self.deleteImage(top_confidence, image_path)
 
@@ -108,11 +109,11 @@ class AdvGenerator():
             shutil.move(os.path.join(source, file), destination)    
     
 
-    def testOnBlackbox(self, image_path):    
+    def testOnBlackbox(self, image_path, target_label):    
         url = "https://phinau.de/trasi"
         key = {"key" : "raekieh3ZofooPhaequoh9oonge8eiya"}
         
-        with open("{}".format(image_path), "rb") as f:
+        with open(image_path, "rb") as f:
             files = {"image" : f}
             r = requests.post(url, data = key, files = files)
             if(r.status_code != 200):
@@ -120,7 +121,9 @@ class AdvGenerator():
     #        print(r.status_code)
             confidences = r.json()
             top_confidence = confidences[0]["confidence"]
-#        print("Precision: {}".format(top_confidence))
+            top_class = confidences[0]["class"]
+        self.created_adversarial_list.append((target_label, 
+                                              top_class, top_confidence))
         return top_confidence
 
     
@@ -131,6 +134,7 @@ class AdvGenerator():
                 os.remove(image_path)
             except OSError as e:  ## if failed, report it back to the user ##
                 print ("Error: %s - %s." % (e.filename, e.strerror))
+
     
     def generateAdv(self, num_steps, epsilon, alpha, target):
         device = torch.device("cuda:0" if torch.cuda.is_available()  else "cpu")
@@ -150,8 +154,9 @@ class AdvGenerator():
                 image.requires_grad = True
                 output = model.forward(image)
 
-                adv.createIterativeAdversarial(image, target_label.item(), output, epsilon, alpha, num_steps, model)
-        
+                adv.createIterativeAdversarial(image, target_label.item(), 
+                                               output, epsilon, alpha, 
+                                               num_steps, model)
         adv.moveUsedImage()        
     
 if __name__ == "__main__":
