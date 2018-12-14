@@ -30,6 +30,10 @@ class Gui():
         
         self.create_adv_button = tk.Button(self.middle_frame, text="create adversarial", command=lambda: onClickAdvButton(), bg="midnight blue", fg="white", width=16)
         
+        self.target_lbl = tk.Label(self.middle_frame, text="targetlabel:")
+        self.target_var = tk.IntVar()
+        self.target_entry = tk.Entry(self.middle_frame, textvariable=self.target_var, width=7)
+        
         self.iter_lbl = tk.Label(self.middle_frame, text="iterations:")
         self.iter_var = tk.IntVar()
         self.iter_entry = tk.Entry(self.middle_frame, textvariable=self.iter_var, width=7)
@@ -64,9 +68,11 @@ class Gui():
         self.choose_image_button.grid(column=0, row=4, columnspan=2, padx=(25,0), pady=(0,15))
         self.seperator0.grid(column=2, row=0, rowspan=6, sticky=(N, S), padx=50)
         self.base_folder_button.grid(column=3, row=0, rowspan=5, padx=(0,15))
-             
-        self.iter_lbl.grid(column=0, row=1, sticky=(E), padx=(25,0), pady=(15,0))
-        self.iter_entry.grid(column=1, row=1, sticky=W, pady=(15,0))
+        
+        self.target_lbl.grid(column=0, row=0, sticky=(E), padx=(25,0), pady=(15,0))
+        self.target_entry.grid(column=1, row=0, sticky=W, pady=(15,0))
+        self.iter_lbl.grid(column=0, row=1, sticky=(E), padx=(25,0))
+        self.iter_entry.grid(column=1, row=1, sticky=W)
         self.epsilon_lbl.grid(column=0, row=2, sticky=(E), padx=(25,0))
         self.epsilon_entry.grid(column=1, row=2, sticky=W)
         self.alpha_lbl.grid(column=0, row=3, sticky=(E), padx=(25,0))
@@ -116,7 +122,10 @@ class Gui():
             
         def onClickAdvButton():
             adv = generateadv.AdvGenerator()
-            adv.generateAdv(num_steps=self.iter_var.get(),epsilon=self.epsilon_var.get(), alpha=self.alpha_var.get())
+            adv.generateAdv(num_steps=self.iter_var.get(), 
+                            epsilon=self.epsilon_var.get(), 
+                            alpha=self.alpha_var.get(), 
+                            target=self.target_var.get())
 
 if __name__ == "__main__":  
     gui = Gui()   

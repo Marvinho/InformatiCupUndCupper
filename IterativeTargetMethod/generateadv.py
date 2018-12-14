@@ -120,7 +120,7 @@ class AdvGenerator():
     #        print(r.status_code)
             confidences = r.json()
             top_confidence = confidences[0]["confidence"]
-        print("Precision: {}".format(top_confidence))
+#        print("Precision: {}".format(top_confidence))
         return top_confidence
 
     
@@ -132,7 +132,7 @@ class AdvGenerator():
             except OSError as e:  ## if failed, report it back to the user ##
                 print ("Error: %s - %s." % (e.filename, e.strerror))
     
-    def generateAdv(self, num_steps, epsilon, alpha):
+    def generateAdv(self, num_steps, epsilon, alpha, target):
         device = torch.device("cuda:0" if torch.cuda.is_available()  else "cpu")
         if (torch.cuda.get_device_capability(0) < (5,0)):
             device = torch.device("cpu")
@@ -141,13 +141,15 @@ class AdvGenerator():
         adv = AdvGenerator()
         model = model.to(device)
         testloader = adv.loadData()
-        for target_label in adv.labels[:4]:
+        if (target>=0 and target<43):
+            adv.labels = np.array([target])
+        for target_label in adv.labels:
             for data in testloader:            
                 image, labels = data
                 image, labels = image.to(device), labels.to(device)
                 image.requires_grad = True
                 output = model.forward(image)
-                
+
                 adv.createIterativeAdversarial(image, target_label.item(), output, epsilon, alpha, num_steps, model)
         
         adv.moveUsedImage()        
