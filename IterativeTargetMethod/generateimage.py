@@ -48,4 +48,4 @@ def chooseImage(src, dst = "./Images/originals/baseImage.png"):
     shutil.copyfile(src, dst)
     
 if __name__ == "__main__":
-    createImage(random = False, color = "magenta")
+    createImage(color = "magenta")

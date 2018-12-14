@@ -41,7 +41,7 @@ class AdvGenerator():
         except:
             print("YOU NEED IMAGES IN ./IMAGES/ORIGINALS")
             print("CREATING RANDOM IMAGE...")
-            generateimage.createImage(color = True)
+            generateimage.createImage(color = "Random")
             test_data = ImageFolder(root = self.testdatapath, transform = self.preprocess)
         
         testloader = DataLoader(dataset = test_data)
@@ -163,7 +163,7 @@ if __name__ == "__main__":
     model = model.to(device)
         
     testloader = adv.loadData()
-    for target_label in adv.labels[:4]:
+    for target_label in adv.labels:
         for data in testloader:            
             image, labels = data
             image, labels = image.to(device), labels.to(device)

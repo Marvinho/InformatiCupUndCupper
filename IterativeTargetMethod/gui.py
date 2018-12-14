@@ -1,9 +1,8 @@
 import tkinter as tk
-from tkinter import N, E, W, S, HORIZONTAL, VERTICAL
+from tkinter import N, E, W, S, VERTICAL
 import generateimage
 from tkinter.filedialog import askopenfilename
 import generateadv
-import modelcnn
 from tkinter import ttk
 
 class Gui():
