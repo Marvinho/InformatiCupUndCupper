@@ -1,2 +1,11 @@
 #ignore pycache
-**/_pycache_
+IterativeTargetMethod/__pycache__/generateadv.cpython-37.pyc
+IterativeTargetMethod/__pycache__/generateimage.cpython-37.pyc
+IterativeTargetMethod/__pycache__/gui.cpython-37.pyc
+IterativeTargetMethod/__pycache__/modelcnn.cpython-37.pyc
+IterativeTargetMethod/adversarials/adverimg_2018-12-14-12_38_eps0.25_iter29_alpha0.025_label0.png
+
+IterativeTargetMethod/__pycache__/
+IterativeTargetMethod/adversarials/
+IterativeTargetMethod/usedImages/
+IterativeTargetMethod/adversarials/
