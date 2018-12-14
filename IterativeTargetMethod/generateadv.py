@@ -48,7 +48,7 @@ class AdvGenerator():
         return testloader
 
     def transformTensorToImage(self, x_adv):
-        x_adv = x_adv.squeeze(0)     #remove batch dimension # B X C H X W ==> C X H X W
+        x_adv = x_adv.squeeze(0).cpu()     #remove batch dimension # B X C H X W ==> C X H X W
         x_adv = np.transpose(x_adv, (1,2,0))   # C X H X W  ==>   H X W X C
         x_adv = np.clip(x_adv, 0, 1)
         image = Image.fromarray(np.uint8(x_adv*255), "RGB")
