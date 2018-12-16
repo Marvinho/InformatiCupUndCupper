@@ -134,6 +134,8 @@ class AdvGenerator():
                 os.remove(image_path)
             except OSError as e:  ## if failed, report it back to the user ##
                 print ("Error: %s - %s." % (e.filename, e.strerror))
+        else:
+            os.rename(image_path, image_path[:-4]+"_{:.2f}%.png".format(top_confidence*100))
 
     
     def generateAdv(self, num_steps, epsilon, alpha, target):
