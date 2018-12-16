@@ -60,8 +60,8 @@ class AdvGenerator():
 
         
     def saveImage(self, image, epsilon, num_step, alpha, target_label):        
-        date_string = time.strftime("%Y-%m-%d-%H_%M")
-        image_path = "./adversarials/adverimg_{}_eps{}_iter{}_alpha{}_label{}.png".format(date_string, 
+        date_string = time.strftime("%Y-%m-%d-%H_%M_%S")
+        image_path = "./adversarials/adv_{}_eps{}_iter{}_alpha{}_target{}.png".format(date_string, 
                                               epsilon, num_step, alpha, target_label)
         print("saving image at {}...".format(image_path))
         if not os.path.exists("./adversarials/"):
