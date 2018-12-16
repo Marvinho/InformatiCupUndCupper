@@ -102,8 +102,8 @@ class AdvGenerator():
         date_string = time.strftime("%Y-%m-%d-%H_%M_%S")
         source = "./Images/originals/"
         destination = "./usedImages/UsedImage{}.png".format(date_string)
-        if not os.path.exists("./usedImages/UsedImage/"):
-            os.makedirs("./usedImages/UsedImage/")               
+        if not os.path.exists("./usedImages/"):
+            os.makedirs("./usedImages/")               
         files = os.listdir(source)        
         for file in files:
             shutil.move(os.path.join(source, file), destination)    
