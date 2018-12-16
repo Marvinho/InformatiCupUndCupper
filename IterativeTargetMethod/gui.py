@@ -133,8 +133,6 @@ class Gui():
             generateimage.openDir(foldername="./adversarials/")
             
         def onClickAdvButton():
-            self.status.config(foreground="green")
-            self.status.config(text='creating adversarials...')
             adv = generateadv.AdvGenerator()
             adv.generateAdv(num_steps=self.iter_var.get(), 
                             epsilon=self.epsilon_var.get(), 
