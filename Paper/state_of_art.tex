@@ -1,0 +1,51 @@
+\chapter{\iflanguage{english}{State of the Art}{Theoretischer Hintergrund}}
+\label{cha:stateOfTheArt}
+\section{Anfälligkeit gegenüber Störbildern}
+Die Anfälligkeit von Neuronalen Netzen gegenüber gezielt manipulierten Störbildern wurde erstmals 2013 von Szegedy et al. untersucht und auch wenn die genauen Hintergründe für diese Schwachstelle noch lang ungeklärt blieben, lässt sie sich heute genauer erklären.
+Um neuronale Netze möglichst effektiv trainieren und optimieren zu können, neigt man in der Regel dazu, ihr Verhalten während des Trainings möglichst linear zu halten. Selbst bei der Verwendung von vergleichsweise nichtlinearen Aktivierungsfunktionen, wie sigmoid oder softmax, ist man in der Regel bestrebt, eine Sättigung zu vermeiden und sich im quasi-linearen Mittelteil der Funktionen zu bewegen. Die führt dazu, dass die Netze sehr große Gradienten bezüglich der input-Werte bilden. Während dies zum einen natürlich ein effektiveres Lernen ermöglicht, bedeutet dies ebenfalls, dass diese Netze auf sehr geringe Änderungen der input-Werte mit sehr großen Änderungen der output-Werte reagieren. Dies wiederum bedeutet, dass lediglich wenige, oft für das menschliche Auge sogar unsichtbare, Manipulationen von Bildern nötig sind, um das Verhalten des Netzes auf diese Bilder grundsätzlich zu verändern.
+Dieser Zusammenhang tritt noch stärker zu Tage, umso größer die Auflösung der inputs ist, da der Manipulierende dadurch einfach mehr (und für die menschliche Wahrnehmung dadurch wesentlich weniger einflussreiche) Bildpunkte zu Verfügung hat, um seine gewünschte Reaktion zu erreichen und bei Bedarf zu verbergen.
+
+\section{Angriffsmöglichkeiten}
+Basierend auf den Hintergründen dieser Anfälligkeit, lassen sich verschiedene Angriffsmöglichkeiten formulieren, mit denen sich Störbilder für ein gegebenes Modell eines Neuronalen Netzes erstellen lassen.
+Die Formeln zu den folgenden Angriffen folgen weitestgehend der von Karakin et al. eingeführten Nomenklatur:
+\begin{itemize}
+	\item \(X\) - Ein Eingabebild, also i.d.R. ein dreidimensionaler Tensor
+	\item \(y_{true} \) - Die "wahre" Klasse des Eingabebilds, also die Reaktion des Netzes auf das nicht-manipulierte Bild
+	\item \(J(X,y)\) - Das Cross-Entropy-Loss des Netzes bei gegebenem Bild \(X\) und output \(y\) 
+	\item \(Clip_{X,\epsilon}\{X'\} \) - Eine Funktion, die ein pixelweises Clipping des Bildes \(X'\) durchführt, sodass die Werte maximal um \(\epsilon\) vom Original \(X\) abweichen
+\end{itemize}
+
+
+
+\subsection{FGSM}
+Eine der ersten und noch immer populärsten Wege Störbilder zu generieren nennt sich FGSM - Fast Gradient Sign Method. Diese Methode wurde bereits 2014 von Goodfellow et al. vorgestellt und funktioniert folgendermaßen:
+Anstatt die berechneten Gradienten bezüglich eines inputs zu dazu zu verwenden, die Gewichte des Netzes zu verändern und ein möglichst niedriges loss zu erreichen, wird der input verändert, um ein möglichst hohes loss zu bekommen und somit eine Fehlklassifizierung zu erwirken.
+\begin{equation}
+X^{adv} = X + \epsilon sign(\nabla_{X} J(X, y_{true}))
+\end{equation}
+
+
+\subsection{Iterative Methode}
+Die von Karakin et al. eingeführte iterative Methode ist eine Erweiterung von FGSM, bei der FGSM mehrfach nacheinander angewendet wird.
+\begin{equation}
+X_0^{adv} = X, X_N^{adv} = Clip_{x, \epsilon} \{X_N^{adv} +\alpha sign(\nabla_X J(X_N^{adv}, y_{true})) \}
+\end{equation}
+
+Der Wert \(\alpha\) beschreibt hierbei die Größe der Änderung der Pixelwerte in jedem Schritt. 
+
+\subsection{Methode zum Erreichen einer bestimmten Klasse}
+
+Die beiden vorhergehenden Methoden haben lediglich als Ziel bei dem entsprechenden Netz eine Fehlklassifizierung hervorzurufen. Um die als output eine bestimmte Klasse zu bekommen, wird die Iterative Methode leicht abgewandelt:
+
+\begin{equation}
+X_0^{adv} = X, X_{N+1}^{adv} = Clip_{X, \epsilon} \{X_N^{adv} - \alpha sign(\nabla_X J(X_N^{adv}, y_{W})) \}
+\end{equation}
+
+Wobei \(y_W\) dem Wert der gewünschten Klasse entspricht.
+
+\section{Angriffe gegen eine Blackbox}
+Die dargestellten Methoden, Störbilder zu generieren haben alle auf dem ersten Blick einen gemeinsamen Schwachpunkt:
+Man benötigt Zugang zum Modell des Neuronalen Netzes, über den man bei industriellen Anwendungen als Außenstehender nicht ohne weiteres verfügen dürfte.
+Allerdings täuscht dieser erste Eindruck.
+2016 zeigten Papernot et al. dass Störbilder, die für eine bestimmte Machine Learning Lösung generiert wurden, ebenso auf andere Lösungen anwendbar sind, solang diese Algorithmen die gleiche Aufgabe lösen. Das bedeutet, dass Störbilder, die zum Beispiel für ein Neuronales Netz zur Identifizierung von Straßenverkehrsschildern generiert wurden, für ein anderes, unbekanntes Netz und sogar für andere Strukturen, wie Logistische Regression oder Entscheidungsbäume verwendet werden kann.
+Um nun Störbilder für eine Blackbox zu generieren, ist es ausreichend, ein eigenes Neuronales Netz zu trainieren, das die gleiche Aufgabe löst und mit Hilfe der oben genannten Methoden Störbilder für dieses Netz zu generieren.
