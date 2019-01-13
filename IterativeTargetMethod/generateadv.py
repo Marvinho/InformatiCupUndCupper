@@ -162,24 +162,6 @@ class AdvGenerator():
         adv.moveUsedImage()        
     
 if __name__ == "__main__":
-    
-    model = modelcnn.Net()    
-    model.loadModel(pretrained_model = "saved_model_state_CNN_final.pth")
     adv = AdvGenerator()
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-
-    model = model.to(device)
-        
-    testloader = adv.loadData()
-    for target_label in adv.labels:
-        for data in testloader:            
-            image, labels = data
-            image, labels = image.to(device), labels.to(device)
-            image.requires_grad = True
-            output = model.forward(image)
-                
-            adv.createIterativeAdversarial(image, target_label.item(), output, epsilon, alpha, num_steps, model)
-        
-    adv.moveUsedImage()
+    adv.generateAdv(num_steps=30, epsilon=0.25, alpha=0.025, target=-1)
     print("finished.")
