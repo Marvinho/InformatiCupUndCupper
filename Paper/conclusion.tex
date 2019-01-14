@@ -1,0 +1,17 @@
+\chapter{\iflanguage{english}{Conclusion}{Diskussion}}
+\label{cha:conclusion}
+
+\section{Nachteile}
+
+Im Gegensatz zu "intelligenteren" Ansätzen, liegt die Verantwortung zum Finden effektiver Parameter beim Nutzer. Dies bedeutet, dass der Benutzende ein tieferes Verständnis für die theoretischen Hintergründe und die daraus resultierende Intuition für die verwendeten Parameter benötigt. 
+Zudem hängt die Qualität der generierten Störbilder auch vom verwendeten Ersatznetz ab. Sollte die Blackbox bereits mit Gegenmaßnahmen für Störbilder ausgestattet sein (wurde sie zum Beispiel bereits mit Störbildern trainiert) oder ist das zum Training verwendete Datenset nicht bekannt, ist davon auszugehen, dass die Effektivität der generierten Störbilder abnimmt.
+Als weiterer Nachteil (besonders im Hinblick auf einen weiter unten beleuchteten praktischen Einsatz) ist die Limitierung auf ein Basisbild zu sehen. Die Möglichkeit mehrere Basisbilder zu verwenden und ein gut geordneter Output der generierten Störbilder wäre im Kontext der automatischen Erstellung einer großen Anzahl an Störbildern wünschenswert. 
+
+\section{Verbesserungsmöglichkeiten}
+
+Die Verwendung einer Destillation oder eines dynamisch trainierten Ersatznetzes könnte die Effektivität der Lösung erhöhen und darüber hinaus auch in der Lage sein, etwaigen Gegenmaßnahmen entgegenzuwirken.
+Über die Integration des Trainings oder der Auswahl eines zu verwendeten Ersatznetzes in die Benutzeroberfläche kann die vorliegende Lösung zu einer all-Purpose-Lösung für die Generierung von Störbildern für beliebige Zielnetze.
+
+\section{Praktischer Einsatz} 
+
+Da diese Arbeit natürlich nicht dazu verwendet werden soll, die in der Einführung erwähnten schweren Unfälle zu verursachen, sondern zu verhindern, ist der Praktische Nutzen der Lösung die Generierung von Störbildern, mit denen wiederum andere Machine Learning Lösungen trainiert werden, um deren Anfälligkeit gegen Störbilder zu vermindern. Dies ist zur Zeit der am weitesten verbreitete Weg Neuronale Netze resistent gegen Störbilder zu machen.  
