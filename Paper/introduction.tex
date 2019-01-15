@@ -4,20 +4,19 @@
 \section{Motivation}
 
 Machine Learning Algorithmen, insbesondere Neuronale Netze, finden zur Zeit großflächig in der automatisierten Bildverarbeitung Verwendung. 
-Doch auch wenn deren Ergebnisqualität bei verschiedensten Aufgaben, wie Objektklassifizierung, Gesichtserkennung u.A. stetig steigt, so ist sein einigen Jahren
+Doch auch wenn deren Ergebnisqualität bei verschiedensten Aufgaben, wie Objektklassifizierung, Gesichtserkennung u.A. stetig steigt, so ist seit einigen Jahren
 eine ihrer Schwachstellen zunehmend in den Fokus der Forschung geraten:
-Die Anfälligkeit gegenüber sogenannten "Adversarials", gezielt generierten Störbildern, die Neuronale Netzen mit hoher Zielsicherheit falsche Ergebnisse produzieren lassen. Besonders die Tatsache, dass sich die Methoden zur Generierung solcher Störbilder von einem Modell auf andere übertragen lassen, sorgt dabei für Kopfzerbrechen. Selbst ohne detailliertes Wissen über eine spezifisches Netz, wie dessen genaue Struktur, lassen sich zuverlässig Störbilder generieren.
+Die Anfälligkeit gegenüber sogenannten \textit{Adversarials}, gezielt generierten Irrbildern, die Neuronale Netze mit hoher Zielsicherheit falsche Ergebnisse produzieren lassen. Besonders die Tatsache, dass sich die Methoden zur Generierung solcher Irrbilder von einem Modell auf andere übertragen lassen, verschärft die Problematik. Denn das bedeutet: Selbst ohne detailliertes Wissen über ein spezifisches Netz, wie dessen genaue Struktur, lassen sich zuverlässig Irrbilder generieren.
 
 Insbesondere die Verwendung Neuronaler Netze im Rahmen von sicherheitskritischen Anwendungen macht deutlich, wie wichtig es ist, genau über dieses Phänomen und seine möglichen Gegenmaßnahmen Bescheid zu wissen. Im Rahmen des informatiCup 2019 haben wir uns deshalb mit einer dieser sicherheitskritischen Anwendungen befasst: Der automatisierten Erkennung und Klassifizierung von Verkehrsschildern im Kontext autonomen Fahrens. 
-Die Folgen eines Fehlverhaltens in Folge von zielgerichtet generierten Störbildern in diesem Feld unterstreichen noch einmal deutlich die Wichtigkeit dieses Themas. Das Anbringen für das menschliche Auge nicht erkennbarer Störbilder in der Nähe von Fahrbahnen kann schwerste Unfälle hervorrufen.   
+Die Folgen eines Fehlverhaltens in Folge von zielgerichtet generierten Irrbildern in diesem Feld unterstreichen noch einmal deutlich die Wichtigkeit dieses Themas. Das Anbringen für das menschliche Auge nicht erkennbarer Irrbilder in der Nähe von Fahrbahnen kann schwerste Unfälle hervorrufen.   
 
 
 \section{\iflanguage{english}{Goals}{Ziele}}
 
-Das Ziel im Rahmen des informatiCup 2019 war es, Störbilder zu generieren, die von der gegebenen Blackbox mit einer Konfidenz von mindestens 90%
-als beliebige Verkehrsschilder klassifiziert werden. 
+Das Ziel im Rahmen des informatiCup 2019 war es, Irrbilder zu generieren, die von der gegebenen Blackbox mit einer Konfidenz von mindestens 90\%
+ als beliebige Verkehrsschilder klassifiziert werden. 
 Das einzige, was an Information über die Blackbox gegeben wurde, war das zum Training verwendete Datenset: Der German Traffic Sign Recognition Benchmark (GTSRB).
 Über eine Webschnittstelle konnten Bilder von der Blackbox klassifiziert werden. 
 
 Eine weitere Schwierigkeit stellt dabei das Anfragelimit an die Blackbox dar. Die Klassifizierungsanfragen waren auf 60 Bilder pro Minute begrenzt. 
-
